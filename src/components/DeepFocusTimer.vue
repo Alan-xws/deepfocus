@@ -1,13 +1,24 @@
 <template>
   <div class="timer-container" :class="{ 'long-break': isLongBreak }">
-    <!-- 水面涟漪呼吸：只有在计时运行时才显示（你要求的） -->
+    <!-- 背景装饰元素 -->
+    <div class="bg-decoration bg-decoration-1"></div>
+    <div class="bg-decoration bg-decoration-2"></div>
+    <div class="bg-decoration bg-decoration-3"></div>
+
+    <!-- 水面涟漪呼吸：只有在计时运行时才显示 -->
     <div v-if="!isPaused" class="ripple ripple-1"></div>
     <div v-if="!isPaused" class="ripple ripple-2"></div>
     <div v-if="!isPaused" class="ripple ripple-3"></div>
     <div v-if="!isPaused" class="ripple ripple-4"></div>
 
     <!-- 主圆环 + 时间（点击整圈切换暂停/继续） -->
-    <div class="circle-wrapper" @click="togglePause">
+    <div
+      class="circle-wrapper"
+      @click="togglePause"
+      :class="{ hovered: hovered }"
+      @mouseenter="hovered = true"
+      @mouseleave="hovered = false"
+    >
       <svg class="progress-ring" width="320" height="320" viewBox="0 0 320 320">
         <circle class="progress-ring__bg" cx="160" cy="160" r="150" stroke-width="12" fill="none" />
         <circle
@@ -26,6 +37,10 @@
       <div class="time-display">
         <div class="time">{{ formatTime(remaining) }}</div>
         <div class="status">{{ statusText }}</div>
+        <!-- 显示完成的番茄钟数量 -->
+        <div class="pomodoro-count" v-if="completedPomodoros > 0">
+          已完成 {{ completedPomodoros }} 个番茄钟
+        </div>
       </div>
 
       <!-- 暂停时显示播放图标 -->
@@ -44,10 +59,36 @@
             {{ t.name }}
           </option>
         </select>
-        <div class="select-arrow">Down Arrow</div>
+        <div class="select-arrow">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
       </div>
-      <button @click="resetTimer" class="reset-btn">重置</button>
-      <button @click="toggleFullscreen" class="fullscreen-btn" title="全屏专注">
+      <button
+        @click="resetTimer"
+        class="reset-btn"
+        :class="{ active: isResetHovered }"
+        @mouseenter="isResetHovered = true"
+        @mouseleave="isResetHovered = false"
+      >
+        重置
+      </button>
+      <button
+        @click="toggleFullscreen"
+        class="fullscreen-btn"
+        title="全屏专注"
+        :class="{ active: isFullscreenHovered }"
+        @mouseenter="isFullscreenHovered = true"
+        @mouseleave="isFullscreenHovered = false"
+      >
         <svg
           width="20"
           height="20"
@@ -78,6 +119,11 @@ const remaining = ref(FOCUS_MINUTES * 60)
 const isPaused = ref(true)
 const isLongBreak = ref(false)
 const completedPomodoros = ref(0)
+
+// 交互状态
+const hovered = ref(false)
+const isResetHovered = ref(false)
+const isFullscreenHovered = ref(false)
 
 const tasks = ref([
   { id: 1, name: '默认任务' },
@@ -208,6 +254,64 @@ watch(
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  transition: background-color 0.5s ease;
+}
+
+/* ==================== 背景装饰元素 ==================== */
+.bg-decoration {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+  filter: blur(40px);
+  z-index: 0;
+}
+
+.bg-decoration-1 {
+  top: 10%;
+  left: 15%;
+  width: 300px;
+  height: 300px;
+  opacity: 0.5;
+  animation: float 15s ease-in-out infinite;
+}
+
+.bg-decoration-2 {
+  bottom: 20%;
+  right: 10%;
+  width: 250px;
+  height: 250px;
+  opacity: 0.4;
+  animation: float 18s ease-in-out infinite reverse;
+}
+
+.bg-decoration-3 {
+  top: 60%;
+  left: 30%;
+  width: 200px;
+  height: 200px;
+  opacity: 0.3;
+  animation: float 20s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -30px) scale(1.05);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.95);
+  }
+}
+
+/* 长休息时调整背景装饰 */
+.long-break .bg-decoration-1,
+.long-break .bg-decoration-2,
+.long-break .bg-decoration-3 {
+  background: radial-gradient(circle, rgba(96, 165, 250, 0.12) 0%, transparent 70%);
 }
 
 /* ==================== 终极水面涟漪呼吸（4层，运行时才显示） ==================== */
@@ -355,15 +459,35 @@ watch(
   height: 320px;
   cursor: pointer;
   z-index: 10;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+  border-radius: 50%;
 }
+
+.circle-wrapper:hover,
+.circle-wrapper.hovered {
+  transform: scale(1.02);
+}
+
+.circle-wrapper:active {
+  transform: scale(0.98);
+}
+
 .progress-ring__bg {
   stroke: rgba(255, 255, 255, 0.1);
+  transition: stroke 0.3s ease;
 }
+
 .progress-ring__progress {
   transform: rotate(-90deg);
   transform-origin: center;
-  transition: stroke-dashoffset 0.8s ease;
+  transition:
+    stroke-dashoffset 0.8s ease,
+    stroke 0.3s ease;
+  filter: drop-shadow(0 0 10px currentColor);
 }
+
 .time-display {
   position: absolute;
   top: 50%;
@@ -373,18 +497,30 @@ watch(
   color: var(--text-primary);
   z-index: 10;
 }
+
 .time {
   font-size: 72px;
   font-weight: 600;
   letter-spacing: -2px;
+  transition: font-size 0.3s ease;
 }
+
 .status {
   margin-top: 16px;
   font-size: 18px;
   opacity: 0.8;
   letter-spacing: 2px;
   text-transform: uppercase;
+  transition: opacity 0.3s ease;
 }
+
+.pomodoro-count {
+  margin-top: 12px;
+  font-size: 14px;
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+
 .play-pause-icon {
   position: absolute;
   top: 50%;
@@ -392,6 +528,14 @@ watch(
   transform: translate(-50%, -50%);
   opacity: 0.7;
   z-index: 10;
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+
+.play-pause-icon:hover {
+  opacity: 0.9;
+  transform: translate(-50%, -50%) scale(1.1);
 }
 
 .controls {
@@ -407,12 +551,14 @@ watch(
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
 }
 
 .task-selector {
   position: relative;
   width: 180px;
 }
+
 .custom-select {
   appearance: none;
   width: 100%;
@@ -425,13 +571,21 @@ watch(
   outline: none;
   cursor: pointer;
   backdrop-filter: blur(10px);
-  transition: all 0.3s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .custom-select:hover {
   background: rgba(30, 41, 59, 1);
   border-color: #60a5fa;
   box-shadow: 0 8px 25px rgba(14, 165, 233, 0.25);
+  transform: translateY(-1px);
 }
+
+.custom-select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
 .select-arrow {
   position: absolute;
   right: 16px;
@@ -439,7 +593,12 @@ watch(
   transform: translateY(-50%);
   pointer-events: none;
   color: #94a3b8;
-  font-size: 12px;
+  transition: all 0.3s ease;
+}
+
+.custom-select:hover + .select-arrow {
+  color: #60a5fa;
+  transform: translateY(-50%) rotate(180deg);
 }
 
 .reset-btn,
@@ -450,21 +609,171 @@ watch(
   height: 48px;
   border-radius: 24px;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  overflow: hidden;
 }
+
+.reset-btn::before,
+.fullscreen-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.reset-btn:hover::before,
+.fullscreen-btn:hover::before,
+.reset-btn.active::before,
+.fullscreen-btn.active::before {
+  left: 100%;
+}
+
 .reset-btn {
   padding: 0 28px;
   font-size: 15px;
+  font-weight: 500;
 }
+
 .fullscreen-btn {
   width: 48px;
 }
+
 .reset-btn:hover,
-.fullscreen-btn:hover {
+.fullscreen-btn:hover,
+.reset-btn.active,
+.fullscreen-btn.active {
   background: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2);
+}
+
+.reset-btn:active,
+.fullscreen-btn:active {
+  transform: translateY(0);
+}
+
+/* ==================== 响应式设计 ==================== */
+@media (max-width: 768px) {
+  .circle-wrapper {
+    width: 280px;
+    height: 280px;
+  }
+
+  .progress-ring {
+    width: 280px;
+    height: 280px;
+  }
+
+  .time {
+    font-size: 60px;
+  }
+
+  .status {
+    font-size: 16px;
+  }
+
+  .controls {
+    padding: 14px 24px;
+    gap: 24px;
+    bottom: 30px;
+  }
+
+  .task-selector {
+    width: 150px;
+  }
+
+  .custom-select {
+    padding: 12px 36px 12px 16px;
+    font-size: 14px;
+  }
+
+  .reset-btn {
+    padding: 0 24px;
+    font-size: 14px;
+    height: 44px;
+  }
+
+  .fullscreen-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .bg-decoration-1 {
+    width: 200px;
+    height: 200px;
+  }
+
+  .bg-decoration-2 {
+    width: 180px;
+    height: 180px;
+  }
+
+  .bg-decoration-3 {
+    width: 150px;
+    height: 150px;
+  }
+}
+
+@media (max-width: 480px) {
+  .circle-wrapper {
+    width: 240px;
+    height: 240px;
+  }
+
+  .progress-ring {
+    width: 240px;
+    height: 240px;
+  }
+
+  .time {
+    font-size: 52px;
+  }
+
+  .status {
+    font-size: 14px;
+  }
+
+  .pomodoro-count {
+    font-size: 12px;
+  }
+
+  .play-pause-icon svg {
+    width: 60px;
+    height: 60px;
+  }
+
+  .controls {
+    padding: 12px 20px;
+    gap: 16px;
+    bottom: 20px;
+  }
+
+  .task-selector {
+    width: 130px;
+  }
+
+  .custom-select {
+    padding: 10px 32px 10px 12px;
+    font-size: 13px;
+  }
+
+  .reset-btn {
+    padding: 0 20px;
+    font-size: 13px;
+    height: 40px;
+  }
+
+  .fullscreen-btn {
+    width: 40px;
+    height: 40px;
+  }
 }
 </style>
