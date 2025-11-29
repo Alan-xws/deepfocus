@@ -16,6 +16,7 @@ const checkImmersive = () => {
 }
 
 onMounted(() => {
+  // 检查沉浸模式状态
   checkImmersive()
   window.addEventListener('resize', checkImmersive)
   document.addEventListener('fullscreenchange', checkImmersive)
@@ -44,12 +45,63 @@ onUnmounted(() => {
   </div>
 </template>
 
+<style>
+/* 全局主题变量 */
+:root {
+  /* 深色主题变量 */
+  --bg-primary: #0f172a;
+  --bg-secondary: #1a1a2e;
+  --bg-card: rgba(15, 23, 42, 0.95);
+  --bg-card-light: rgba(255, 255, 255, 0.05);
+
+  --text-primary: white;
+  --text-secondary: rgba(255, 255, 255, 0.8);
+  --text-disabled: rgba(255, 255, 255, 0.5);
+
+  --border-color: rgba(255, 255, 255, 0.1);
+
+  --accent-primary: #60a5fa;
+  --accent-secondary: #a78bfa;
+  --accent-hover: rgba(96, 165, 250, 0.2);
+
+  --error-light: #fca5a5;
+  --error-main: #ef4444;
+  --error-bg: rgba(239, 68, 68, 0.1);
+
+  color-scheme: dark;
+}
+
+/* 浅色主题 */
+.light-theme {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-card: rgba(255, 255, 255, 0.95);
+  --bg-card-light: rgba(0, 0, 0, 0.05);
+
+  --text-primary: #0f172a;
+  --text-secondary: rgba(0, 0, 0, 0.7);
+  --text-disabled: rgba(0, 0, 0, 0.5);
+
+  --border-color: rgba(0, 0, 0, 0.1);
+
+  --accent-primary: #3b82f6;
+  --accent-secondary: #8b5cf6;
+  --accent-hover: rgba(59, 130, 246, 0.1);
+
+  --error-light: #fca5a5;
+  --error-main: #dc2626;
+  --error-bg: rgba(239, 68, 68, 0.05);
+
+  color-scheme: light;
+}
+</style>
+
 <style scoped>
 /* 你原来的所有样式全部保留！只加下面几行 */
 
 /* 沉浸模式：隐藏头尾 + 内容区占满全屏 */
 .app.immersive {
-  background: #0f172a;
+  background: var(--bg-primary);
 }
 
 .app.immersive .router-container.full {
@@ -76,9 +128,12 @@ body,
   margin: 0;
   padding: 0;
   overflow: hidden;
-  background: #0f172a;
-  color: white;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 .app {

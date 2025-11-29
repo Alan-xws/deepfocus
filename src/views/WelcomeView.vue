@@ -58,9 +58,9 @@ onMounted(() => {
     <!-- 当前页面内容 -->
     <Transition name="fade" mode="out-in">
       <div :key="currentPage" class="page">
-        <div class="icon">{{ pages[currentPage].icon }}</div>
-        <h1 class="title">{{ pages[currentPage].title }}</h1>
-        <p class="desc">{{ pages[currentPage].desc }}</p>
+        <div class="icon">{{ pages[currentPage]?.icon ?? '' }}</div>
+        <h1 class="title">{{ pages[currentPage]?.title ?? '' }}</h1>
+        <p class="desc">{{ pages[currentPage]?.desc ?? '' }}</p>
 
         <!-- 页面指示器 -->
         <div class="dots">

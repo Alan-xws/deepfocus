@@ -30,7 +30,7 @@
 
       <!-- 暂停时显示播放图标 -->
       <div class="play-pause-icon" v-if="isPaused && remaining > 0">
-        <svg width="80" height="80" viewBox="0 0 24 24" fill="white">
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="currentColor">
           <path d="M8 5v14l11-7z" />
         </svg>
       </div>
@@ -48,7 +48,14 @@
       </div>
       <button @click="resetTimer" class="reset-btn">重置</button>
       <button @click="toggleFullscreen" class="fullscreen-btn" title="全屏专注">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
           <path
             d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"
           />
@@ -59,7 +66,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onUnmounted, watch } from 'vue'
 
 // ==================== 配置区域 ====================
 const FOCUS_MINUTES = 25
@@ -92,7 +99,12 @@ const dashOffset = computed(() => {
   return circumference * (1 - (total - remaining.value) / total)
 })
 
-const progressColor = computed(() => (isLongBreak.value ? '#60a5fa' : '#0ea5e9'))
+const progressColor = computed(() => {
+  // 使用CSS变量的方式返回颜色，这样可以随主题变化
+  // 实际上我们通过CSS变量控制，这里返回一个基色，具体颜色在CSS中定义
+  if (isLongBreak.value) return '#3b82f6' // 浅色模式下的蓝色
+  return '#0ea5e9' // 默认蓝色
+})
 
 const statusText = computed(() => {
   if (isLongBreak.value) {
@@ -100,7 +112,7 @@ const statusText = computed(() => {
       ? '长时休息'
       : '短暂休息'
   }
-  return selectedTask.value.name
+  return selectedTask.value?.name ?? ''
 })
 
 const formatTime = (seconds: number) => {
@@ -112,7 +124,7 @@ const formatTime = (seconds: number) => {
 }
 
 // ==================== 计时逻辑 ====================
-let timer: any = null
+let timer: number | null = null
 const tick = () => {
   if (remaining.value <= 0) {
     completeCurrentSession()
@@ -126,13 +138,13 @@ const togglePause = () => {
   if (!isPaused.value) {
     timer = setInterval(tick, 1000)
   } else {
-    clearInterval(timer)
+    clearInterval(timer!)
     timer = null
   }
 }
 
 const completeCurrentSession = () => {
-  clearInterval(timer)
+  clearInterval(timer!)
   timer = null
   if (!isLongBreak.value) completedPomodoros.value++
 
@@ -151,7 +163,7 @@ const completeCurrentSession = () => {
 }
 
 const resetTimer = () => {
-  clearInterval(timer)
+  clearInterval(timer!)
   timer = null
   isPaused.value = true
   isLongBreak.value = false
@@ -166,7 +178,7 @@ const toggleFullscreen = () => {
   }
 }
 
-onUnmounted(() => clearInterval(timer))
+onUnmounted(() => clearInterval(timer!))
 
 watch(selectedTask, () => {
   if (!isLongBreak.value) {
@@ -188,7 +200,7 @@ watch(
   position: relative;
   width: 100vw;
   height: 100vh;
-  background: #0f172a;
+  background: var(--bg-primary);
   overflow: hidden;
   user-select: none;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
@@ -265,6 +277,77 @@ watch(
   background: rgba(96, 165, 250, 0.09) !important;
 }
 
+/* 浅色主题适配 */
+:global(.light-theme) .timer-container {
+  background: var(--bg-primary); /* 使用主题变量确保正确显示白色背景 */
+}
+
+:global(.light-theme) .ripple {
+  background: rgba(59, 130, 246, 0.12) !important;
+}
+
+:global(.light-theme) .ripple-1 {
+  background: rgba(59, 130, 246, 0.16) !important;
+}
+
+:global(.light-theme) .ripple-2 {
+  background: rgba(59, 130, 246, 0.1) !important;
+}
+
+:global(.light-theme) .ripple-3 {
+  background: rgba(59, 130, 246, 0.08) !important;
+}
+
+:global(.light-theme) .ripple-4 {
+  background: rgba(59, 130, 246, 0.06) !important;
+}
+
+:global(.light-theme) .long-break .ripple {
+  background: rgba(59, 130, 246, 0.15) !important;
+}
+
+:global(.light-theme) .time-display {
+  color: var(--text-primary);
+}
+
+:global(.light-theme) .progress-ring__bg {
+  stroke: rgba(0, 0, 0, 0.1);
+}
+
+:global(.light-theme) .controls {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: var(--border-color);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+:global(.light-theme) .custom-select {
+  background: rgba(248, 250, 252, 0.9);
+  color: var(--text-primary);
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+:global(.light-theme) .custom-select:hover {
+  background: rgba(248, 250, 252, 1);
+  border-color: #3b82f6;
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+}
+
+:global(.light-theme) .select-arrow {
+  color: var(--text-secondary);
+}
+
+:global(.light-theme) .reset-btn,
+:global(.light-theme) .fullscreen-btn {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: var(--text-primary);
+}
+
+:global(.light-theme) .reset-btn:hover,
+:global(.light-theme) .fullscreen-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
 /* ==================== 你原来的所有样式（完全保留） ==================== */
 .circle-wrapper {
   position: relative;
@@ -287,7 +370,7 @@ watch(
   left: 50%;
   transform: translate(-50%, -50%);
   text-align: center;
-  color: white;
+  color: var(--text-primary);
   z-index: 10;
 }
 .time {
