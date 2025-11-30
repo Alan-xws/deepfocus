@@ -3,6 +3,10 @@ import TimerView from '@/views/TimerView.vue'
 import RecordsView from '@/views/RecordsView.vue'
 import SettingsView from '@/views/SettingsView.vue'
 import ProfileView from '@/views/ProfileView.vue'
+import ProfileInfoView from '@/views/ProfileInfoView.vue'
+import ProfileNotificationsView from '@/views/ProfileNotificationsView.vue'
+import ProfilePrivacyView from '@/views/ProfilePrivacyView.vue'
+import ProfileAboutView from '@/views/ProfileAboutView.vue'
 
 // 检查是否已登录
 const isAuthenticated = () => {
@@ -17,6 +21,11 @@ const routes = [
   { path: '/records', name: 'Records', component: RecordsView, meta: { requiresAuth: true } },
   { path: '/settings', name: 'Settings', component: SettingsView, meta: { requiresAuth: true } },
   { path: '/profile', name: 'Profile', component: ProfileView, meta: { requiresAuth: true } },
+  // 个人设置子页面
+  { path: '/profile/info', name: 'ProfileInfo', component: ProfileInfoView, meta: { requiresAuth: true } },
+  { path: '/profile/notifications', name: 'ProfileNotifications', component: ProfileNotificationsView, meta: { requiresAuth: true } },
+  { path: '/profile/privacy', name: 'ProfilePrivacy', component: ProfilePrivacyView, meta: { requiresAuth: true } },
+  { path: '/profile/about', name: 'ProfileAbout', component: ProfileAboutView, meta: { requiresAuth: true } },
 ]
 
 const router = createRouter({

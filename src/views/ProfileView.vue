@@ -30,7 +30,7 @@
     <div class="action-container">
       <h3>个人设置</h3>
       <div class="action-cards">
-        <div class="action-card">
+        <div class="action-card" @click="navigateTo('/profile/info')">
           <div class="action-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
               <path
@@ -42,9 +42,14 @@
             <h4>个人资料</h4>
             <p>修改头像、昵称等信息</p>
           </div>
+          <div class="action-arrow">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8.59 16.58L13.17 12L8.59 7.41L10 6L16 12L10 18L8.59 16.58Z" />
+            </svg>
+          </div>
         </div>
 
-        <div class="action-card">
+        <div class="action-card" @click="navigateTo('/profile/notifications')">
           <div class="action-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
               <path
@@ -56,9 +61,14 @@
             <h4>通知设置</h4>
             <p>管理应用通知偏好</p>
           </div>
+          <div class="action-arrow">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8.59 16.58L13.17 12L8.59 7.41L10 6L16 12L10 18L8.59 16.58Z" />
+            </svg>
+          </div>
         </div>
 
-        <div class="action-card">
+        <div class="action-card" @click="navigateTo('/profile/privacy')">
           <div class="action-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
               <path
@@ -70,9 +80,14 @@
             <h4>隐私设置</h4>
             <p>管理数据和隐私选项</p>
           </div>
+          <div class="action-arrow">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8.59 16.58L13.17 12L8.59 7.41L10 6L16 12L10 18L8.59 16.58Z" />
+            </svg>
+          </div>
         </div>
 
-        <div class="action-card">
+        <div class="action-card" @click="navigateTo('/profile/about')">
           <div class="action-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
               <path
@@ -84,6 +99,11 @@
             <h4>关于应用</h4>
             <p>版本信息与使用说明</p>
           </div>
+          <div class="action-arrow">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8.59 16.58L13.17 12L8.59 7.41L10 6L16 12L10 18L8.59 16.58Z" />
+            </svg>
+          </div>
         </div>
       </div>
     </div>
@@ -91,12 +111,21 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
 // 用户数据
 const userName = '专注大师'
 const joinDate = '2025年'
 const totalFocusHours = '128'
 const totalCompletedSessions = '326'
 const currentStreak = '15'
+
+// 导航到子页面
+const navigateTo = (path: string) => {
+  router.push(path)
+}
 </script>
 
 <style scoped>
@@ -118,7 +147,7 @@ const currentStreak = '15'
 
 /* 用户个人信息区域 */
 .user-profile {
-  width: 100%;
+  width: 100wh;
   background: var(--bg-secondary);
   border-radius: 20px;
   padding: 30px;
