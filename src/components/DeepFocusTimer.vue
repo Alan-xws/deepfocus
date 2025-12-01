@@ -5,12 +5,6 @@
     <div class="bg-decoration bg-decoration-2"></div>
     <div class="bg-decoration bg-decoration-3"></div>
 
-    <!-- 水面涟漪呼吸：只有在计时运行时才显示 -->
-    <div v-if="!isPaused" class="ripple ripple-1"></div>
-    <div v-if="!isPaused" class="ripple ripple-2"></div>
-    <div v-if="!isPaused" class="ripple ripple-3"></div>
-    <div v-if="!isPaused" class="ripple ripple-4"></div>
-
     <!-- 主圆环 + 时间（点击整圈切换暂停/继续） -->
     <div
       class="circle-wrapper"
@@ -110,9 +104,9 @@
 import { ref, computed, onUnmounted, watch } from 'vue'
 
 // ==================== 配置区域 ====================
-const FOCUS_MINUTES = 25
-const SHORT_BREAK = 5
-const LONG_BREAK = 10
+const FOCUS_MINUTES = 1
+const SHORT_BREAK = 1
+const LONG_BREAK = 1
 
 // ==================== 响应式状态 ====================
 const remaining = ref(FOCUS_MINUTES * 60)
@@ -146,10 +140,16 @@ const dashOffset = computed(() => {
 })
 
 const progressColor = computed(() => {
-  // 使用CSS变量的方式返回颜色，这样可以随主题变化
-  // 实际上我们通过CSS变量控制，这里返回一个基色，具体颜色在CSS中定义
-  if (isLongBreak.value) return '#3b82f6' // 浅色模式下的蓝色
-  return '#0ea5e9' // 默认蓝色
+  // 区分短暂休息和长时休息的颜色
+  if (isLongBreak.value) {
+    // 长时休息：检查是否是真正的长休息（每4个番茄钟）
+    if (completedPomodoros.value % 4 === 0 && completedPomodoros.value > 0) {
+      return '#8b5cf6' // 长时休息使用深紫色
+    } else {
+      return '#f97316' // 短暂休息使用橙色
+    }
+  }
+  return '#0ea5e9' // 默认专注时的蓝色
 })
 
 const statusText = computed(() => {
@@ -314,100 +314,9 @@ watch(
   background: radial-gradient(circle, rgba(96, 165, 250, 0.12) 0%, transparent 70%);
 }
 
-/* ==================== 终极水面涟漪呼吸（4层，运行时才显示） ==================== */
-.ripple {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(14, 165, 233, 0.18);
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  animation: ripple 9s infinite ease-out;
-  opacity: 0;
-}
-
-/* 四层波纹，间隔均匀，永不重复 */
-.ripple-1 {
-  animation-delay: 0s;
-  background: rgba(14, 165, 233, 0.22);
-}
-.ripple-2 {
-  animation-delay: 2.25s;
-  background: rgba(14, 165, 233, 0.16);
-}
-.ripple-3 {
-  animation-delay: 4.5s;
-  background: rgba(14, 165, 233, 0.12);
-}
-.ripple-4 {
-  animation-delay: 6.75s;
-  background: rgba(14, 165, 233, 0.09);
-}
-
-/* 丝滑扩散动画（扩散更远、更清晰） */
-@keyframes ripple {
-  0% {
-    width: 0;
-    height: 0;
-    opacity: 0;
-  }
-  15% {
-    opacity: 0.9;
-  }
-  100% {
-    width: 3000px;
-    height: 3000px;
-    opacity: 0;
-  }
-}
-
-/* 长休息时自动变成柔和浅蓝波纹 */
-.long-break .ripple {
-  background: rgba(96, 165, 250, 0.18) !important;
-}
-.long-break .ripple-1 {
-  background: rgba(96, 165, 250, 0.22) !important;
-}
-.long-break .ripple-2 {
-  background: rgba(96, 165, 250, 0.16) !important;
-}
-.long-break .ripple-3 {
-  background: rgba(96, 165, 250, 0.12) !important;
-}
-.long-break .ripple-4 {
-  background: rgba(96, 165, 250, 0.09) !important;
-}
-
 /* 浅色主题适配 */
 :global(.light-theme) .timer-container {
   background: var(--bg-primary); /* 使用主题变量确保正确显示白色背景 */
-}
-
-:global(.light-theme) .ripple {
-  background: rgba(59, 130, 246, 0.12) !important;
-}
-
-:global(.light-theme) .ripple-1 {
-  background: rgba(59, 130, 246, 0.16) !important;
-}
-
-:global(.light-theme) .ripple-2 {
-  background: rgba(59, 130, 246, 0.1) !important;
-}
-
-:global(.light-theme) .ripple-3 {
-  background: rgba(59, 130, 246, 0.08) !important;
-}
-
-:global(.light-theme) .ripple-4 {
-  background: rgba(59, 130, 246, 0.06) !important;
-}
-
-:global(.light-theme) .long-break .ripple {
-  background: rgba(59, 130, 246, 0.15) !important;
 }
 
 :global(.light-theme) .time-display {
@@ -485,7 +394,6 @@ watch(
   transition:
     stroke-dashoffset 0.8s ease,
     stroke 0.3s ease;
-  filter: drop-shadow(0 0 10px currentColor);
 }
 
 .time-display {
