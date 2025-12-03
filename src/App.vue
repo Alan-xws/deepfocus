@@ -49,9 +49,9 @@ onUnmounted(() => {
 /* 全局主题变量 */
 :root {
   /* 深色主题变量 */
-  --bg-primary: #0f172a;
-  --bg-secondary: #1a1a2e;
-  --bg-card: rgba(15, 23, 42, 0.95);
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --bg-card: #16213e;
   --bg-card-light: rgba(255, 255, 255, 0.05);
 
   --text-primary: white;
@@ -61,7 +61,7 @@ onUnmounted(() => {
   --border-color: rgba(255, 255, 255, 0.1);
 
   --accent-primary: #60a5fa;
-  --accent-secondary: #a78bfa;
+  --accent-secondary: #0ea5e9;
   --accent-hover: rgba(96, 165, 250, 0.2);
 
   --error-light: #fca5a5;

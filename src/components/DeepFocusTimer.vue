@@ -102,14 +102,23 @@
 
 <script setup lang="ts">
 import { ref, computed, onUnmounted, watch } from 'vue'
+import { useTasksStore } from '@/stores/tasks'
+import { useRecordsStore } from '@/stores/records'
+import { useSettingsStore } from '@/stores/settings'
 
 // ==================== 配置区域 ====================
-const FOCUS_MINUTES = 1
-const SHORT_BREAK = 1
-const LONG_BREAK = 1
+// 使用设置store
+const settingsStore = useSettingsStore()
 
-// ==================== 响应式状态 ====================
-const remaining = ref(FOCUS_MINUTES * 60)
+// 初始化store
+const tasksStore = useTasksStore()
+const recordsStore = useRecordsStore()
+
+// 加载设置
+settingsStore.loadSettings()
+
+// 响应式状态 ====================
+const remaining = ref(settingsStore.getFocusTime * 60)
 const isPaused = ref(true)
 const isLongBreak = ref(false)
 const completedPomodoros = ref(0)
@@ -119,23 +128,20 @@ const hovered = ref(false)
 const isResetHovered = ref(false)
 const isFullscreenHovered = ref(false)
 
-const tasks = ref([
-  { id: 1, name: '默认任务' },
-  { id: 2, name: '学习编程' },
-  { id: 3, name: '健身' },
-  { id: 4, name: '阅读' },
-])
-const selectedTask = ref(tasks.value[0])
+// 使用store中的任务列表和选中任务
+const tasks = computed(() => tasksStore.taskList)
+const selectedTask = ref(tasksStore.getDefaultTask())
 
 // ==================== 圆环计算 ====================
 const circumference = 2 * Math.PI * 150
 
 const dashOffset = computed(() => {
   const total = isLongBreak.value
-    ? (completedPomodoros.value % 4 === 0 && completedPomodoros.value > 0
-        ? LONG_BREAK
-        : SHORT_BREAK) * 60
-    : FOCUS_MINUTES * 60
+    ? (completedPomodoros.value % settingsStore.getLongBreakInterval === 0 &&
+      completedPomodoros.value > 0
+        ? settingsStore.getLongBreakTime
+        : settingsStore.getShortBreakTime) * 60
+    : settingsStore.getFocusTime * 60
   return circumference * (1 - (total - remaining.value) / total)
 })
 
@@ -192,18 +198,34 @@ const togglePause = () => {
 const completeCurrentSession = () => {
   clearInterval(timer!)
   timer = null
-  if (!isLongBreak.value) completedPomodoros.value++
 
+  // 如果是专注时段，保存记录
   if (!isLongBreak.value) {
+    completedPomodoros.value++
+
+    // 保存专注记录到store
+    recordsStore.addRecord(selectedTask.value, settingsStore.getFocusTime * 60, 'focus')
+
+    // 切换到休息
     isLongBreak.value = true
     remaining.value =
-      completedPomodoros.value % 4 === 0 && completedPomodoros.value > 0
-        ? LONG_BREAK * 60
-        : SHORT_BREAK * 60
+      completedPomodoros.value % settingsStore.getLongBreakInterval === 0 &&
+      completedPomodoros.value > 0
+        ? settingsStore.getLongBreakTime * 60
+        : settingsStore.getShortBreakTime * 60
   } else {
+    // 如果是休息结束，保存休息记录
+    recordsStore.addRecord(
+      selectedTask.value,
+      remaining.value,
+      isLongBreak.value ? 'long-break' : 'short-break',
+    )
+
+    // 切换到专注
     isLongBreak.value = false
-    remaining.value = FOCUS_MINUTES * 60
+    remaining.value = settingsStore.getFocusTime * 60
   }
+
   isPaused.value = false
   timer = setInterval(tick, 1000)
 }
@@ -213,7 +235,7 @@ const resetTimer = () => {
   timer = null
   isPaused.value = true
   isLongBreak.value = false
-  remaining.value = FOCUS_MINUTES * 60
+  remaining.value = settingsStore.getFocusTime * 60
 }
 
 const toggleFullscreen = () => {
@@ -237,6 +259,32 @@ watch(
   (isFull) => {
     document.body.style.cursor = isFull ? 'none' : 'default'
   },
+)
+
+// 监听设置变化
+watch(
+  () => [
+    settingsStore.getFocusTime,
+    settingsStore.getShortBreakTime,
+    settingsStore.getLongBreakTime,
+    settingsStore.getLongBreakInterval,
+  ],
+  ([newFocus, newShort, newLong, newInterval]) => {
+    // 只有在计时器暂停且在专注状态时才更新剩余时间
+    if (isPaused.value && !isLongBreak.value && newFocus !== undefined) {
+      remaining.value = newFocus * 60
+    }
+    if (isPaused.value && isLongBreak.value && newLong !== undefined) {
+      remaining.value = newLong * 60
+    }
+    if (isPaused.value && !isLongBreak.value && newShort !== undefined) {
+      remaining.value = newShort * 60
+    }
+    if (isPaused.value && isLongBreak.value && newInterval !== undefined) {
+      completedPomodoros.value = 0
+    }
+  },
+  { deep: true },
 )
 </script>
 

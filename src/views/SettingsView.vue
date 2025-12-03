@@ -1,18 +1,21 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useTasksStore } from '@/stores/tasks'
+import { useSettingsStore } from '@/stores/settings'
 
-// 响应式数据 - 时间设置
-const focusTime = ref<number>(25)
-const shortBreakTime = ref<number>(5)
-const longBreakTime = ref<number>(15)
-const longBreakInterval = ref<number>(4)
+// 使用设置store
+const settingsStore = useSettingsStore()
 
 // 响应式数据 - 任务设置
-const tasks = ref<Array<{ id: string; text: string }>>([])
+const tasksStore = useTasksStore()
 const newTaskText = ref<string>('')
 
+// 编辑任务状态
+const editingTaskId = ref<number | null>(null)
+const editingTaskText = ref<string>('')
+
 // 响应式数据 - 主题设置
-const theme = ref<'light' | 'dark'>('dark')
+// 使用settingsStore中的主题设置
 
 // 交互状态
 const currentTab = ref<'time' | 'tasks' | 'appearance'>('time')
@@ -20,62 +23,19 @@ const showSavedMessage = ref<boolean>(false)
 
 // 计算属性
 const canAddTask = computed(() => newTaskText.value.trim().length > 0)
+const tasks = computed(() => tasksStore.tasks)
 
 // 生命周期钩子
 onMounted(() => {
-  loadSettings()
+  settingsStore.loadSettings()
+  tasksStore.loadTasks()
 })
-
-// 加载设置
-const loadSettings = () => {
-  try {
-    // 加载时间设置
-    const savedFocusTime = localStorage.getItem('deepfocus-focus-time')
-    const savedShortBreak = localStorage.getItem('deepfocus-short-break')
-    const savedLongBreak = localStorage.getItem('deepfocus-long-break')
-    const savedInterval = localStorage.getItem('deepfocus-interval')
-
-    if (savedFocusTime) focusTime.value = parseInt(savedFocusTime)
-    if (savedShortBreak) shortBreakTime.value = parseInt(savedShortBreak)
-    if (savedLongBreak) longBreakTime.value = parseInt(savedLongBreak)
-    if (savedInterval) longBreakInterval.value = parseInt(savedInterval)
-
-    // 加载任务设置
-    const savedTasks = localStorage.getItem('deepfocus-tasks')
-    if (savedTasks) {
-      tasks.value = JSON.parse(savedTasks)
-    }
-
-    // 加载主题设置
-    const savedTheme = localStorage.getItem('deepfocus-theme')
-    if (savedTheme) {
-      theme.value = savedTheme as 'light' | 'dark'
-    }
-
-    // 应用主题
-    applyTheme()
-  } catch (error) {
-    console.error('加载设置失败:', error)
-  }
-}
 
 // 保存设置
 const saveSettings = () => {
   try {
-    // 保存时间设置
-    localStorage.setItem('deepfocus-focus-time', String(focusTime.value))
-    localStorage.setItem('deepfocus-short-break', String(shortBreakTime.value))
-    localStorage.setItem('deepfocus-long-break', String(longBreakTime.value))
-    localStorage.setItem('deepfocus-interval', String(longBreakInterval.value))
-
-    // 保存任务设置
-    localStorage.setItem('deepfocus-tasks', JSON.stringify(tasks.value))
-
-    // 保存主题设置
-    localStorage.setItem('deepfocus-theme', theme.value)
-
-    // 应用主题
-    applyTheme()
+    // 设置store会自动保存到localStorage
+    settingsStore.saveSettings()
 
     // 显示保存成功消息
     showSavedMessage.value = true
@@ -87,32 +47,40 @@ const saveSettings = () => {
   }
 }
 
-// 应用主题
-const applyTheme = () => {
-  if (theme.value === 'dark') {
-    document.documentElement.classList.add('dark-theme')
-    document.documentElement.classList.remove('light-theme')
-  } else {
-    document.documentElement.classList.add('light-theme')
-    document.documentElement.classList.remove('dark-theme')
-  }
-}
-
 // 添加任务
 const addTask = () => {
   if (!canAddTask.value) return
 
-  tasks.value.push({
-    id: Date.now().toString(),
-    text: newTaskText.value.trim(),
-  })
-
+  tasksStore.addTask(newTaskText.value.trim())
   newTaskText.value = ''
 }
 
+// 编辑任务
+const startEditTask = (task: { id: number; name: string }) => {
+  editingTaskId.value = task.id
+  editingTaskText.value = task.name
+}
+
+// 保存编辑的任务
+const saveEditTask = () => {
+  if (editingTaskId.value !== null && editingTaskText.value.trim()) {
+    tasksStore.updateTask(editingTaskId.value, editingTaskText.value.trim())
+    cancelEditTask()
+  }
+}
+
+// 取消编辑任务
+const cancelEditTask = () => {
+  editingTaskId.value = null
+  editingTaskText.value = ''
+}
+
 // 删除任务
-const deleteTask = (taskId: string) => {
-  tasks.value = tasks.value.filter((task) => task.id !== taskId)
+const deleteTask = (taskId: number) => {
+  tasksStore.deleteTask(taskId)
+  if (editingTaskId.value === taskId) {
+    cancelEditTask()
+  }
 }
 </script>
 
@@ -165,7 +133,7 @@ const deleteTask = (taskId: string) => {
             <div class="setting-control">
               <input
                 type="number"
-                v-model.number="focusTime"
+                v-model.number="settingsStore.focusTime"
                 min="1"
                 max="60"
                 class="setting-input"
@@ -178,7 +146,7 @@ const deleteTask = (taskId: string) => {
             <div class="setting-control">
               <input
                 type="number"
-                v-model.number="shortBreakTime"
+                v-model.number="settingsStore.shortBreakTime"
                 min="1"
                 max="30"
                 class="setting-input"
@@ -191,7 +159,7 @@ const deleteTask = (taskId: string) => {
             <div class="setting-control">
               <input
                 type="number"
-                v-model.number="longBreakTime"
+                v-model.number="settingsStore.longBreakTime"
                 min="1"
                 max="60"
                 class="setting-input"
@@ -204,7 +172,7 @@ const deleteTask = (taskId: string) => {
             <div class="setting-control">
               <input
                 type="number"
-                v-model.number="longBreakInterval"
+                v-model.number="settingsStore.longBreakInterval"
                 min="1"
                 max="10"
                 class="setting-input"
@@ -236,10 +204,31 @@ const deleteTask = (taskId: string) => {
 
           <ul v-else class="task-list">
             <li v-for="task in tasks" :key="task.id" class="task-item">
-              <span class="task-text">{{ task.text }}</span>
-              <button class="delete-btn" @click="deleteTask(task.id)" aria-label="删除任务">
-                ×
-              </button>
+              <div v-if="editingTaskId === task.id" class="task-edit-section">
+                <input
+                  type="text"
+                  v-model="editingTaskText"
+                  class="task-input"
+                  @keyup.enter="saveEditTask"
+                  @keyup.escape="cancelEditTask"
+                  ref="(el) => el?.focus()"
+                />
+                <div class="edit-actions">
+                  <button class="save-btn-small" @click="saveEditTask">保存</button>
+                  <button class="cancel-btn-small" @click="cancelEditTask">取消</button>
+                </div>
+              </div>
+              <div v-else class="task-content">
+                <span class="task-text">{{ task.name }}</span>
+                <div class="task-actions">
+                  <button class="edit-btn" @click="startEditTask(task)" aria-label="编辑任务">
+                    ✏️
+                  </button>
+                  <button class="delete-btn" @click="deleteTask(task.id)" aria-label="删除任务">
+                    ×
+                  </button>
+                </div>
+              </div>
             </li>
           </ul>
         </div>
@@ -253,15 +242,15 @@ const deleteTask = (taskId: string) => {
             <div class="theme-selector">
               <button
                 class="theme-btn"
-                :class="{ active: theme === 'light' }"
-                @click="theme = 'light'"
+                :class="{ active: settingsStore.theme === 'light' }"
+                @click="settingsStore.theme = 'light'"
               >
                 浅色
               </button>
               <button
                 class="theme-btn"
-                :class="{ active: theme === 'dark' }"
-                @click="theme = 'dark'"
+                :class="{ active: settingsStore.theme === 'dark' }"
+                @click="settingsStore.theme = 'dark'"
               >
                 深色
               </button>
@@ -275,7 +264,7 @@ const deleteTask = (taskId: string) => {
       </div>
 
       <!-- 保存成功消息 -->
-      <div v-if="showSavedMessage" class="saved-message animate-in">✅ 设置已保存</div>
+      <div v-if="showSavedMessage" class="saved-message">✅ 设置已保存</div>
     </div>
   </div>
 </template>
@@ -430,57 +419,27 @@ const deleteTask = (taskId: string) => {
 }
 
 .tab-btn {
-  padding: 12px 28px;
+  padding: 10px 24px;
   border: none;
   background: transparent;
   color: var(--text-primary);
   border-radius: 8px;
   cursor: pointer;
-  transition: all var(--transition-normal);
-  font-size: 15px;
+  transition: all 0.3s ease;
+  font-size: 14px;
   font-weight: 500;
   opacity: 0.7;
-  position: relative;
-  overflow: hidden;
-  z-index: 1;
-}
-
-.tab-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(14, 165, 233, 0.1), transparent);
-  transition: left var(--transition-slow);
-  z-index: -1;
 }
 
 .tab-btn:hover {
   opacity: 1;
-  transform: translateY(-1px);
-}
-
-.tab-btn:hover::before {
-  left: 100%;
 }
 
 .tab-btn.active {
-  background: linear-gradient(135deg, var(--primary-color), #2563eb);
+  background: linear-gradient(135deg, #3b82f6, #0ea5e9);
   opacity: 1;
   color: white;
-  box-shadow:
-    var(--shadow-primary),
-    0 0 20px rgba(14, 165, 233, 0.4);
-  transform: translateY(-2px);
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.tab-btn.active::before {
-  display: none;
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
 }
 
 /* 内容区域 */
@@ -490,18 +449,33 @@ const deleteTask = (taskId: string) => {
 
 /* 设置卡片 - 与RecordsView的卡片风格一致 */
 .settings-card {
-  background: var(--bg-card);
-  border: none;
-  border-radius: var(--card-radius);
-  padding: var(--section-padding);
-  transition: all var(--transition-normal);
-  backdrop-filter: blur(12px);
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  opacity: 0.8;
+  transform: translateY(10px);
+  animation: fadeInUp 0.6s ease forwards;
   position: relative;
   overflow: hidden;
-  box-shadow: var(--shadow-md);
+}
+
+.settings-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #0ea5e9);
 }
 
 .settings-card-active {
+  opacity: 1;
+  transform: translateY(0);
   background: var(--bg-card-active);
   border: none;
   box-shadow:
@@ -525,34 +499,11 @@ const deleteTask = (taskId: string) => {
   color: white !important;
 }
 
-.settings-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--primary-gradient);
-  opacity: 0;
-  transition: opacity var(--transition-normal);
-}
-
-.settings-card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
-  border-color: rgba(14, 165, 233, 0.3);
-}
-
-.settings-card:hover::before {
-  opacity: 1;
-}
-
 .settings-card h3 {
-  margin: 0 0 24px 0;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 20px;
+  color: var(--text-primary);
   text-align: center;
 }
 
@@ -577,38 +528,35 @@ const deleteTask = (taskId: string) => {
 .setting-input,
 .task-input {
   width: 100%;
-  padding: 14px 18px;
-  background: var(--bg-input);
-  border: none;
-  border-radius: var(--input-radius);
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
   color: var(--text-primary);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
-  transition: all var(--transition-normal);
-  position: relative;
-  z-index: 1;
-  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(8px);
+  box-sizing: border-box;
 }
 
 .setting-input::placeholder,
 .task-input::placeholder {
-  color: var(--text-muted);
-  transition: color var(--transition-fast);
+  color: var(--text-secondary);
+  opacity: 0.7;
 }
 
 .setting-input:hover,
 .task-input:hover {
-  border-color: var(--border-hover);
-  background: var(--bg-input-focus);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .setting-input:focus,
 .task-input:focus {
   outline: none;
-  background: var(--bg-input-focus);
-  box-shadow:
-    0 0 0 3px var(--border-focus),
-    inset 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-color: rgba(14, 165, 233, 0.5);
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
 }
 
 .setting-input:focus::placeholder,
@@ -656,46 +604,25 @@ const deleteTask = (taskId: string) => {
 
 /* 添加按钮 - 与RecordsView风格一致 */
 .add-btn {
-  padding: 12px 24px;
-  background: var(--secondary-gradient);
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #3b82f6, #0ea5e9);
   border: none;
-  border-radius: var(--btn-radius);
+  border-radius: 8px;
   color: white;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all var(--transition-normal);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
   white-space: nowrap;
-  position: relative;
-  overflow: hidden;
-  z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
-.add-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left var(--transition-slow);
-  z-index: -1;
-}
-.center {
-  margin: auto;
-}
-
 .add-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-success);
-}
-
-.add-btn:hover:not(:disabled)::before {
-  left: 100%;
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 .add-btn:active:not(:disabled) {
@@ -708,7 +635,7 @@ const deleteTask = (taskId: string) => {
   transform: none;
 }
 
-/* 任务列表 - 与RecordsView的记录项风格一致 */
+/* 任务列表 */
 .task-list {
   list-style: none;
   padding: 0;
@@ -719,41 +646,60 @@ const deleteTask = (taskId: string) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
-  margin: 8px 0;
+  padding: 12px 16px;
   background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
+  margin-bottom: 12px;
   transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  border-left: 3px solid transparent;
+  backdrop-filter: blur(8px);
 }
 
 .task-item:hover {
-  background: var(--hover-bg);
-  transform: translateX(5px);
-  border-left-color: var(--primary-color);
-}
-
-.task-item::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(14, 165, 233, 0.2), transparent);
-  transition: left 0.5s;
-}
-
-.task-item:hover::before {
-  left: 100%;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .task-text {
   flex: 1;
-  font-size: 15px;
-  line-height: 1.4;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+/* 任务内容区域 */
+.task-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+/* 任务操作按钮组 */
+.task-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* 编辑按钮 */
+.edit-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--primary-color);
+  border-radius: 8px;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-btn:hover {
+  background: rgba(59, 130, 246, 0.2);
+  transform: scale(1.1);
 }
 
 /* 删除按钮 */
@@ -776,6 +722,54 @@ const deleteTask = (taskId: string) => {
 .delete-btn:hover {
   background: rgba(239, 68, 68, 0.2);
   transform: scale(1.1);
+}
+
+/* 任务编辑区域 */
+.task-edit-section {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+}
+
+/* 编辑操作按钮 */
+.edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.save-btn-small {
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.save-btn-small:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.cancel-btn-small {
+  padding: 6px 12px;
+  background: rgba(75, 85, 99, 0.6);
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cancel-btn-small:hover {
+  background: rgba(75, 85, 99, 0.8);
+  transform: translateY(-1px);
 }
 
 /* 空状态 - 与RecordsView保持一致 */
@@ -802,48 +796,27 @@ const deleteTask = (taskId: string) => {
 
 /* 保存按钮 - 与RecordsView的按钮风格一致 */
 .save-btn {
-  display: flex;
+  padding: 12px 32px;
+  background: linear-gradient(135deg, #3b82f6, #0ea5e9);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+  text-align: center;
+  margin: 0 auto;
+  display: block;
   width: 100%;
   max-width: 240px;
-  margin: 0 auto;
-  padding: 14px 24px;
-  background: var(--primary-gradient);
-  border: none;
-  border-radius: var(--btn-radius);
-  color: white;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--transition-normal);
-  position: relative;
-  overflow: hidden;
-  z-index: 1;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  text-align: center;
-}
-
-.save-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left var(--transition-slow);
-  z-index: -1;
 }
 
 .save-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(14, 165, 233, 0.4);
-  background: var(--primary-gradient-angled);
-}
-
-.save-btn:hover::before {
-  left: 100%;
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(14, 165, 233, 0.4);
 }
 
 .save-btn:active {
@@ -853,8 +826,9 @@ const deleteTask = (taskId: string) => {
 /* 保存成功消息 */
 .saved-message {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   padding: 12px 20px;
   background: rgba(16, 185, 129, 0.95);
   color: white;
@@ -876,22 +850,22 @@ const deleteTask = (taskId: string) => {
 @keyframes slideInRight {
   from {
     opacity: 0;
-    transform: translateX(100%);
+    transform: translateX(-50%) translateY(20px);
   }
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateX(-50%) translateY(0);
   }
 }
 
 @keyframes fadeOut {
   from {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateX(-50%) translateY(0);
   }
   to {
     opacity: 0;
-    transform: translateX(20px);
+    transform: translateX(-50%) translateY(20px);
   }
 }
 
@@ -998,9 +972,10 @@ const deleteTask = (taskId: string) => {
   }
 
   .saved-message {
-    top: 15px;
-    right: 15px;
+    bottom: 15px;
     left: 15px;
+    right: 15px;
+    transform: none;
     font-size: 13px;
   }
 }

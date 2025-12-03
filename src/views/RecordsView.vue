@@ -1,12 +1,36 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed } from 'vue'
+import { useRecordsStore } from '../stores/records'
 
-interface Record {
-  date: string
-  minutes: number
-}
+// 初始化记录存储
+const recordsStore = useRecordsStore()
 
-const records = ref<Record[]>([])
+// 转换records为兼容现有代码的格式
+const records = computed(() => {
+  // 按日期分组记录
+  const dateGroups = new Map<string, number>()
+
+  recordsStore.records.forEach((record) => {
+    if (record.type !== 'focus' || !record.date) return
+
+    const recordDate = new Date(record.date)
+    if (isNaN(recordDate.getTime())) return
+
+    const dateStr = recordDate.toISOString().split('T')[0]
+    if (!dateStr) return
+
+    // Ensure dateStr is a valid string
+    const safeDateStr = dateStr as string
+    const existingMinutes = dateGroups.get(safeDateStr) || 0
+    dateGroups.set(safeDateStr, existingMinutes + Math.round(record.duration / 60))
+  })
+
+  // 转换为兼容现有格式的数组
+  return Array.from(dateGroups.entries()).map(([date, minutes]) => ({
+    date,
+    minutes,
+  }))
+})
 
 // 交互状态
 const hoveredRecord = ref<number | null>(null)
@@ -40,17 +64,7 @@ const goToCurrentMonth = () => {
   currentMonth.value = new Date()
 }
 
-onMounted(() => {
-  const raw = localStorage.getItem('deepfocus-records')
-  if (raw) {
-    try {
-      records.value = JSON.parse(raw)
-    } catch (e) {
-      console.error('Failed to parse records:', e)
-      records.value = []
-    }
-  }
-})
+// 记录现在来自recordsStore，不再需要从localStorage加载
 
 // 计算总专注时间
 // const totalMinutes = computed(() => {
@@ -91,7 +105,9 @@ const getMonthRange = () => {
 
 // 计算指定时间范围内的记录
 const getRangeRecords = (start: Date, end: Date) => {
-  return records.value.filter((record) => {
+  return recordsStore.records.filter((record) => {
+    if (record.type !== 'focus') return false
+
     const recordDate = new Date(record.date)
     return recordDate >= start && recordDate <= end
   })
@@ -102,8 +118,12 @@ const rangeStats = computed(() => {
   const range = timeRange.value === 'week' ? getWeekRange() : getMonthRange()
   const rangeRecords = getRangeRecords(range.start, range.end)
 
-  const totalMinutes = rangeRecords.reduce((sum, record) => sum + record.minutes, 0)
-  const daysWithFocus = rangeRecords.filter((record) => record.minutes > 0).length
+  const totalMinutes = Math.round(
+    rangeRecords.reduce((sum, record) => sum + record.duration, 0) / 60,
+  )
+  const daysWithFocus = new Set(
+    rangeRecords.map((record) => new Date(record.date).toISOString().split('T')[0]),
+  ).size
   const averageMinutes = daysWithFocus > 0 ? Math.round(totalMinutes / daysWithFocus) : 0
 
   return {
@@ -132,13 +152,23 @@ const weeklyTrend = computed(() => {
   for (let i = 6; i >= 0; i--) {
     const date = new Date(today)
     date.setDate(today.getDate() - i)
-    const dateStr = date.toISOString().split('T')[0]
+    const dateStr = date.toISOString().split('T')[0] || ''
+    const dateStart = new Date(dateStr)
+    const dateEnd = new Date(dateStr)
+    dateEnd.setHours(23, 59, 59, 999)
 
-    const record = records.value.find((r) => r.date === dateStr)
+    // 计算当天的专注时长（只计算focus类型）
+    const dayMinutes = Math.round(
+      recordsStore
+        .getRecordsByDateRange(dateStart, dateEnd)
+        .filter((record) => record.type === 'focus')
+        .reduce((sum, record) => sum + record.duration, 0) / 60,
+    )
+
     weekRecords.push({
       date: dateStr,
       day: date.toLocaleDateString('zh-CN', { weekday: 'short' }),
-      minutes: record ? record.minutes : 0,
+      minutes: dayMinutes,
     })
   }
 
@@ -194,16 +224,25 @@ const calendarGrid = computed(() => {
   // 添加当月日期
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(year, month, day)
-    const dateStr = date.toISOString().split('T')[0]
-    const record = records.value.find((r) => r.date === dateStr)
-    const minutes = record ? record.minutes : 0
+    const dateStr = date.toISOString().split('T')[0] || ''
+    const dateStart = new Date(dateStr)
+    const dateEnd = new Date(dateStr)
+    dateEnd.setHours(23, 59, 59, 999)
+
+    // 计算当天的专注时长（只计算focus类型）
+    const dayMinutes = Math.round(
+      recordsStore
+        .getRecordsByDateRange(dateStart, dateEnd)
+        .filter((record) => record.type === 'focus')
+        .reduce((sum, record) => sum + record.duration, 0) / 60,
+    )
 
     grid.push({
       type: 'date',
       label: String(day),
       date: dateStr,
-      minutes: minutes,
-      level: getFocusLevel(minutes),
+      minutes: dayMinutes,
+      level: getFocusLevel(dayMinutes),
     })
   }
 
@@ -328,9 +367,37 @@ const currentMonthName = computed(() => {
         </div>
       </div>
 
+      <!-- 任务统计部分 -->
+      <div class="tasks-stats animate-in-delay">
+        <h3>任务专注统计</h3>
+
+        <div v-if="Object.keys(recordsStore.taskFocusDuration).length === 0" class="empty-state">
+          <div class="empty-icon">📋</div>
+          <p>暂无任务记录</p>
+          <p class="empty-hint">创建任务并完成专注后，这里将显示不同任务的专注时间</p>
+        </div>
+
+        <div v-else class="tasks-stats-list">
+          <!-- 按专注时长排序 -->
+          <div
+            v-for="(task, index) in Object.entries(recordsStore.taskFocusDuration)
+              .sort((a, b) => b[1].duration - a[1].duration)
+              .map(([taskId, taskData]) => ({ id: parseInt(taskId), ...taskData }))"
+            :key="task.id"
+            class="task-stat-item"
+            :class="{ hovered: hoveredRecord === index + 1000 }"
+            @mouseenter="hoveredRecord = index + 1000"
+            @mouseleave="hoveredRecord = null"
+          >
+            <div class="task-name">{{ task.name }}</div>
+            <div class="task-minutes">{{ Math.round(task.duration / 60) }} 分钟</div>
+          </div>
+        </div>
+      </div>
+
       <!-- 记录列表 -->
       <div class="records-list animate-in-delay">
-        <div v-if="records.length === 0" class="empty-state">
+        <div v-if="recordsStore.records.length === 0" class="empty-state">
           <div class="empty-icon">📊</div>
           <p>暂无记录</p>
           <p class="empty-hint">完成你的第一个番茄钟后，这里将显示你的专注记录</p>
@@ -803,6 +870,80 @@ const currentMonthName = computed(() => {
 .empty-hint {
   font-size: 14px !important;
   opacity: 0.6;
+}
+
+/* 任务统计部分 */
+.tasks-stats {
+  margin-bottom: 32px;
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.tasks-stats h3 {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.tasks-stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.task-stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  border-left: 3px solid transparent;
+}
+
+.task-stat-item:hover,
+.task-stat-item.hovered {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(5px);
+  border-left-color: #3b82f6;
+}
+
+.task-stat-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.task-stat-item:hover::before,
+.task-stat-item.hovered::before {
+  left: 100%;
+}
+
+.task-name {
+  font-weight: 500;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 12px;
+}
+
+.task-minutes {
+  font-weight: 600;
+  color: #3b82f6;
+  min-width: 80px;
+  text-align: right;
 }
 
 /* 记录项 */

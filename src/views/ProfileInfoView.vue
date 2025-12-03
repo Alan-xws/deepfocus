@@ -512,6 +512,7 @@ const showError = (message: string) => {
   color: var(--text-primary);
   font-size: 16px;
   transition: all 0.3s ease;
+  box-sizing: border-box;
 }
 
 .form-group input:focus,

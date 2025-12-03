@@ -137,6 +137,9 @@ const navigateTo = (path: string) => {
   display: flex;
   flex-direction: column;
   gap: 30px;
+  background-color: var(--bg-primary);
+  position: relative;
+  overflow: hidden;
 
   /* 移动端优化 */
   @media (max-width: 768px) {
@@ -249,10 +252,12 @@ const navigateTo = (path: string) => {
 
 .stat-card {
   background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 16px;
   padding: 25px;
   text-align: center;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
   transition: all 0.3s ease;
 
   /* 移动端优化 */

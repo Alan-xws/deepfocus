@@ -53,9 +53,12 @@ const handleLogoutAndClose = () => {
 
     <!-- 桌面端导航 -->
     <nav class="nav-center">
-      <RouterLink to="/timer" :class="{ active: currentPath() === '/timer' }">计时器</RouterLink>
+      <RouterLink to="/timer" :class="{ active: currentPath() === '/timer' }">番茄钟</RouterLink>
       <RouterLink to="/records" :class="{ active: currentPath() === '/records' }"
         >专注记录</RouterLink
+      >
+      <RouterLink to="/square" :class="{ active: currentPath() === '/square' }"
+        >专注广场</RouterLink
       >
       <RouterLink to="/settings" :class="{ active: currentPath() === '/settings' }"
         >设置</RouterLink
@@ -114,6 +117,12 @@ const handleLogoutAndClose = () => {
             :class="{ active: currentPath() === '/settings' }"
             @click="closeMobileMenu"
             >设置</RouterLink
+          >
+          <RouterLink
+            to="/square"
+            :class="{ active: currentPath() === '/square' }"
+            @click="closeMobileMenu"
+            >专注广场</RouterLink
           >
           <RouterLink
             to="/profile"
