@@ -8,6 +8,7 @@ import ProfileNotificationsView from '@/views/ProfileNotificationsView.vue'
 import ProfilePrivacyView from '@/views/ProfilePrivacyView.vue'
 import ProfileAboutView from '@/views/ProfileAboutView.vue'
 import SquareView from '@/views/SquareView.vue'
+import AchievementsView from '@/views/AchievementsView.vue'
 
 // 检查是否已登录
 const isAuthenticated = () => {
@@ -22,6 +23,7 @@ const routes = [
   { path: '/records', name: 'Records', component: RecordsView, meta: { requiresAuth: true } },
   { path: '/settings', name: 'Settings', component: SettingsView, meta: { requiresAuth: true } },
   { path: '/square', name: 'Square', component: SquareView, meta: { requiresAuth: true } },
+  { path: '/achievements', name: 'Achievements', component: AchievementsView, meta: { requiresAuth: true } },
   { path: '/profile', name: 'Profile', component: ProfileView, meta: { requiresAuth: true } },
   // 个人设置子页面
   { path: '/profile/info', name: 'ProfileInfo', component: ProfileInfoView, meta: { requiresAuth: true } },

@@ -105,6 +105,7 @@ import { ref, computed, onUnmounted, watch } from 'vue'
 import { useTasksStore } from '@/stores/tasks'
 import { useRecordsStore } from '@/stores/records'
 import { useSettingsStore } from '@/stores/settings'
+import { useAchievementsStore } from '@/stores/achievements'
 
 // ==================== 配置区域 ====================
 // 使用设置store
@@ -113,6 +114,7 @@ const settingsStore = useSettingsStore()
 // 初始化store
 const tasksStore = useTasksStore()
 const recordsStore = useRecordsStore()
+const achievementsStore = useAchievementsStore()
 
 // 加载设置
 settingsStore.loadSettings()
@@ -205,6 +207,10 @@ const completeCurrentSession = () => {
 
     // 保存专注记录到store
     recordsStore.addRecord(selectedTask.value, settingsStore.getFocusTime * 60, 'focus')
+
+    // 检查成就
+    achievementsStore.calculateConsecutiveDays()
+    achievementsStore.checkAchievements()
 
     // 切换到休息
     isLongBreak.value = true

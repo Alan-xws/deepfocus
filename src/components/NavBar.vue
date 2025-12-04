@@ -57,6 +57,9 @@ const handleLogoutAndClose = () => {
       <RouterLink to="/records" :class="{ active: currentPath() === '/records' }"
         >专注记录</RouterLink
       >
+      <RouterLink to="/achievements" :class="{ active: currentPath() === '/achievements' }"
+        >成就</RouterLink
+      >
       <RouterLink to="/square" :class="{ active: currentPath() === '/square' }"
         >专注广场</RouterLink
       >
@@ -111,6 +114,12 @@ const handleLogoutAndClose = () => {
             :class="{ active: currentPath() === '/records' }"
             @click="closeMobileMenu"
             >专注记录</RouterLink
+          >
+          <RouterLink
+            to="/achievements"
+            :class="{ active: currentPath() === '/achievements' }"
+            @click="closeMobileMenu"
+            >成就</RouterLink
           >
           <RouterLink
             to="/settings"
