@@ -14,12 +14,10 @@ const newTaskText = ref<string>('')
 const editingTaskId = ref<number | null>(null)
 const editingTaskText = ref<string>('')
 
-// 响应式数据 - 主题设置
-// 使用settingsStore中的主题设置
-
 // 交互状态
-const currentTab = ref<'time' | 'tasks' | 'appearance'>('time')
+const currentTab = ref<'time' | 'tasks' | 'appearance' | 'notifications'>('time')
 const showSavedMessage = ref<boolean>(false)
+const isResetting = ref<boolean>(false)
 
 // 计算属性
 const canAddTask = computed(() => newTaskText.value.trim().length > 0)
@@ -82,6 +80,45 @@ const deleteTask = (taskId: number) => {
     cancelEditTask()
   }
 }
+
+// 重置设置
+const resetSettings = () => {
+  if (confirm('确定要重置所有设置吗？这将清除您的所有自定义设置并恢复默认值。')) {
+    isResetting.value = true
+    setTimeout(() => {
+      settingsStore.resetSettings()
+      isResetting.value = false
+      showSavedMessage.value = true
+      setTimeout(() => {
+        showSavedMessage.value = false
+      }, 2000)
+    }, 500)
+  }
+}
+
+// 预设方案
+const applyPreset = (preset: 'default' | 'short' | 'long') => {
+  switch (preset) {
+    case 'default':
+      settingsStore.focusTime = 25
+      settingsStore.shortBreakTime = 5
+      settingsStore.longBreakTime = 15
+      settingsStore.longBreakInterval = 4
+      break
+    case 'short':
+      settingsStore.focusTime = 15
+      settingsStore.shortBreakTime = 3
+      settingsStore.longBreakTime = 10
+      settingsStore.longBreakInterval = 3
+      break
+    case 'long':
+      settingsStore.focusTime = 45
+      settingsStore.shortBreakTime = 10
+      settingsStore.longBreakTime = 30
+      settingsStore.longBreakInterval = 2
+      break
+  }
+}
 </script>
 
 <template>
@@ -104,6 +141,7 @@ const deleteTask = (taskId: number) => {
           :class="{ active: currentTab === 'time' }"
           @click="currentTab = 'time'"
         >
+          <span class="tab-icon">⏱️</span>
           时间设置
         </button>
         <button
@@ -111,6 +149,7 @@ const deleteTask = (taskId: number) => {
           :class="{ active: currentTab === 'tasks' }"
           @click="currentTab = 'tasks'"
         >
+          <span class="tab-icon">📝</span>
           任务设置
         </button>
         <button
@@ -118,7 +157,16 @@ const deleteTask = (taskId: number) => {
           :class="{ active: currentTab === 'appearance' }"
           @click="currentTab = 'appearance'"
         >
+          <span class="tab-icon">🎨</span>
           外观设置
+        </button>
+        <button
+          class="tab-btn"
+          :class="{ active: currentTab === 'notifications' }"
+          @click="currentTab = 'notifications'"
+        >
+          <span class="tab-icon">🔔</span>
+          通知设置
         </button>
       </div>
 
@@ -128,55 +176,101 @@ const deleteTask = (taskId: number) => {
         <div v-if="currentTab === 'time'" class="settings-card settings-card-active">
           <h3>专注时长设置</h3>
 
+          <!-- 预设方案 -->
+          <div class="presets-section">
+            <label class="setting-label">快速预设</label>
+            <div class="presets-grid">
+              <button class="preset-btn" @click="applyPreset('default')">标准模式</button>
+              <button class="preset-btn" @click="applyPreset('short')">短时间模式</button>
+              <button class="preset-btn" @click="applyPreset('long')">长时间模式</button>
+            </div>
+          </div>
+
           <div class="setting-item">
             <label class="setting-label">专注时间 (分钟)</label>
             <div class="setting-control">
-              <input
-                type="number"
-                v-model.number="settingsStore.focusTime"
-                min="1"
-                max="60"
-                class="setting-input"
-              />
+              <div class="input-with-slider">
+                <input
+                  type="number"
+                  v-model.number="settingsStore.focusTime"
+                  min="1"
+                  max="60"
+                  class="setting-input"
+                />
+                <input
+                  type="range"
+                  v-model.number="settingsStore.focusTime"
+                  min="1"
+                  max="60"
+                  class="slider"
+                />
+              </div>
             </div>
           </div>
 
           <div class="setting-item">
             <label class="setting-label">短休息时间 (分钟)</label>
             <div class="setting-control">
-              <input
-                type="number"
-                v-model.number="settingsStore.shortBreakTime"
-                min="1"
-                max="30"
-                class="setting-input"
-              />
+              <div class="input-with-slider">
+                <input
+                  type="number"
+                  v-model.number="settingsStore.shortBreakTime"
+                  min="1"
+                  max="30"
+                  class="setting-input"
+                />
+                <input
+                  type="range"
+                  v-model.number="settingsStore.shortBreakTime"
+                  min="1"
+                  max="30"
+                  class="slider"
+                />
+              </div>
             </div>
           </div>
 
           <div class="setting-item">
             <label class="setting-label">长休息时间 (分钟)</label>
             <div class="setting-control">
-              <input
-                type="number"
-                v-model.number="settingsStore.longBreakTime"
-                min="1"
-                max="60"
-                class="setting-input"
-              />
+              <div class="input-with-slider">
+                <input
+                  type="number"
+                  v-model.number="settingsStore.longBreakTime"
+                  min="1"
+                  max="60"
+                  class="setting-input"
+                />
+                <input
+                  type="range"
+                  v-model.number="settingsStore.longBreakTime"
+                  min="1"
+                  max="60"
+                  class="slider"
+                />
+              </div>
             </div>
           </div>
 
           <div class="setting-item">
             <label class="setting-label">长休息间隔 (个番茄钟)</label>
             <div class="setting-control">
-              <input
-                type="number"
-                v-model.number="settingsStore.longBreakInterval"
-                min="1"
-                max="10"
-                class="setting-input"
-              />
+              <div class="input-with-slider">
+                <input
+                  type="number"
+                  v-model.number="settingsStore.longBreakInterval"
+                  min="1"
+                  max="10"
+                  class="setting-input"
+                />
+                <input
+                  type="range"
+                  v-model.number="settingsStore.longBreakInterval"
+                  min="1"
+                  max="10"
+                  class="slider"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -245,6 +339,7 @@ const deleteTask = (taskId: number) => {
                 :class="{ active: settingsStore.theme === 'light' }"
                 @click="settingsStore.theme = 'light'"
               >
+                <span class="theme-icon">☀️</span>
                 浅色
               </button>
               <button
@@ -252,15 +347,112 @@ const deleteTask = (taskId: number) => {
                 :class="{ active: settingsStore.theme === 'dark' }"
                 @click="settingsStore.theme = 'dark'"
               >
+                <span class="theme-icon">🌙</span>
                 深色
               </button>
             </div>
           </div>
+
+          <div class="setting-item">
+            <label class="setting-label">强调色</label>
+            <div class="color-selector">
+              <button 
+                class="color-option" 
+                style="background: #3b82f6" 
+                @click="settingsStore.accentColor = '#3b82f6'"
+                :class="{ active: settingsStore.accentColor === '#3b82f6' }"
+              ></button>
+              <button 
+                class="color-option" 
+                style="background: #8b5cf6" 
+                @click="settingsStore.accentColor = '#8b5cf6'"
+                :class="{ active: settingsStore.accentColor === '#8b5cf6' }"
+              ></button>
+              <button 
+                class="color-option" 
+                style="background: #ec4899" 
+                @click="settingsStore.accentColor = '#ec4899'"
+                :class="{ active: settingsStore.accentColor === '#ec4899' }"
+              ></button>
+              <button 
+                class="color-option" 
+                style="background: #10b981" 
+                @click="settingsStore.accentColor = '#10b981'"
+                :class="{ active: settingsStore.accentColor === '#10b981' }"
+              ></button>
+              <button 
+                class="color-option" 
+                style="background: #f59e0b" 
+                @click="settingsStore.accentColor = '#f59e0b'"
+                :class="{ active: settingsStore.accentColor === '#f59e0b' }"
+              ></button>
+              <button 
+                class="color-option" 
+                style="background: #ef4444" 
+                @click="settingsStore.accentColor = '#ef4444'"
+                :class="{ active: settingsStore.accentColor === '#ef4444' }"
+              ></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 通知设置卡片 -->
+        <div v-else-if="currentTab === 'notifications'" class="settings-card settings-card-active">
+          <h3>通知设置</h3>
+
+          <div class="setting-item">
+            <label class="setting-label">声音提示</label>
+            <div class="setting-control">
+              <div class="toggle-container">
+                <input 
+                  type="checkbox" 
+                  id="sound-toggle" 
+                  v-model="settingsStore.soundEnabled"
+                  class="toggle-input"
+                />
+                <label for="sound-toggle" class="toggle-label"></label>
+              </div>
+            </div>
+          </div>
+
+          <div class="setting-item">
+            <label class="setting-label">声音音量</label>
+            <div class="setting-control">
+              <input 
+                type="range" 
+                v-model.number="settingsStore.volume" 
+                min="0" 
+                max="100" 
+                class="slider"
+                :disabled="!settingsStore.soundEnabled"
+              />
+              <span class="slider-value">{{ settingsStore.volume }}%</span>
+            </div>
+          </div>
+
+          <div class="setting-item">
+            <label class="setting-label">桌面通知</label>
+            <div class="setting-control">
+              <div class="toggle-container">
+                <input 
+                  type="checkbox" 
+                  id="notifications-toggle" 
+                  v-model="settingsStore.notificationsEnabled"
+                  class="toggle-input"
+                />
+                <label for="notifications-toggle" class="toggle-label"></label>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="text-center">
+      <div class="settings-actions animate-in-delay">
         <!-- 保存按钮 -->
-        <button class="save-btn animate-in-delay" @click="saveSettings">保存设置</button>
+        <button class="save-btn" @click="saveSettings">保存设置</button>
+        <!-- 重置按钮 -->
+        <button class="reset-btn" @click="resetSettings" :disabled="isResetting">
+          {{ isResetting ? '重置中...' : '重置设置' }}
+        </button>
       </div>
 
       <!-- 保存成功消息 -->
@@ -411,24 +603,35 @@ const deleteTask = (taskId: number) => {
   justify-content: center;
   margin-bottom: 32px;
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  padding: 4px;
+  border-radius: 16px;
+  padding: 6px;
   inline-size: fit-content;
   margin-left: auto;
   margin-right: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .tab-btn {
-  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
   border: none;
   background: transparent;
   color: var(--text-primary);
-  border-radius: 8px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 14px;
   font-weight: 500;
   opacity: 0.7;
+  position: relative;
+  overflow: hidden;
+}
+
+.tab-icon {
+  font-size: 16px;
+  transition: transform 0.3s ease;
 }
 
 .tab-btn:hover {
@@ -794,33 +997,279 @@ const deleteTask = (taskId: number) => {
   opacity: 0.6;
 }
 
+/* 设置操作按钮 */
+.settings-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
 /* 保存按钮 - 与RecordsView的按钮风格一致 */
 .save-btn {
-  padding: 12px 32px;
+  padding: 14px 36px;
   background: linear-gradient(135deg, #3b82f6, #0ea5e9);
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   color: white;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
   text-align: center;
-  margin: 0 auto;
-  display: block;
-  width: 100%;
-  max-width: 240px;
+  min-width: 160px;
+  position: relative;
+  overflow: hidden;
 }
 
 .save-btn:hover {
   opacity: 0.9;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(14, 165, 233, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(14, 165, 233, 0.4);
 }
 
 .save-btn:active {
   transform: translateY(0);
+}
+
+/* 重置按钮 */
+.reset-btn {
+  padding: 14px 36px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+  color: var(--danger-color);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  min-width: 160px;
+}
+
+.reset-btn:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+.reset-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.reset-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 预设方案 */
+.presets-section {
+  margin-bottom: 32px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.presets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.preset-btn {
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.preset-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--primary-color);
+  transform: translateY(-1px);
+}
+
+/* 输入框与滑块组合 */
+.input-with-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 滑块样式 */
+.slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.slider:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #0ea5e9);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+  transition: all 0.3s ease;
+}
+
+.slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+}
+
+.slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #0ea5e9);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+  transition: all 0.3s ease;
+}
+
+.slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+}
+
+.slider:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.slider:disabled::-webkit-slider-thumb {
+  cursor: not-allowed;
+  transform: none;
+}
+
+.slider-value {
+  margin-left: 12px;
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* 开关样式 */
+.toggle-container {
+  position: relative;
+  width: 60px;
+  height: 30px;
+}
+
+.toggle-input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-label {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.1);
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.toggle-label:before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+.toggle-input:checked + .toggle-label {
+  background: linear-gradient(135deg, #3b82f6, #0ea5e9);
+}
+
+.toggle-input:checked + .toggle-label:before {
+  transform: translateX(30px);
+}
+
+/* 主题选择器 */
+.theme-selector {
+  display: flex;
+  gap: 12px;
+}
+
+.theme-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  border-radius: var(--input-radius);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.theme-icon {
+  font-size: 16px;
+}
+
+/* 颜色选择器 */
+.color-selector {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.color-option {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.color-option:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.color-option.active {
+  border-color: white;
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 /* 保存成功消息 */
@@ -895,6 +1344,15 @@ const deleteTask = (taskId: number) => {
   .settings-container {
     max-width: 700px;
   }
+  
+  .tabs {
+    flex-wrap: wrap;
+  }
+  
+  .tab-btn {
+    padding: 10px 20px;
+    font-size: 13px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -911,12 +1369,31 @@ const deleteTask = (taskId: number) => {
     width: 100%;
     overflow-x: auto;
     justify-content: flex-start;
+    padding: 4px;
   }
 
   .tab-btn {
-    padding: 10px 20px;
-    font-size: 14px;
+    padding: 10px 16px;
+    font-size: 13px;
     flex-shrink: 0;
+    gap: 6px;
+  }
+  
+  .tab-icon {
+    font-size: 14px;
+  }
+  
+  .settings-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .save-btn, .reset-btn {
+    width: 100%;
+  }
+  
+  .presets-grid {
+    grid-template-columns: 1fr;
   }
 
   .settings-card {
@@ -998,9 +1475,14 @@ const deleteTask = (taskId: number) => {
   }
 
   .tab-btn {
-    padding: 8px 16px;
-    font-size: 13px;
+    padding: 8px 12px;
+    font-size: 12px;
     border-radius: 6px;
+    gap: 4px;
+  }
+  
+  .tab-icon {
+    font-size: 12px;
   }
 
   .settings-card {

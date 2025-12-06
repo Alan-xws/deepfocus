@@ -6,6 +6,10 @@ interface Settings {
   longBreakTime: number
   longBreakInterval: number
   theme: 'light' | 'dark'
+  soundEnabled: boolean
+  volume: number
+  notificationsEnabled: boolean
+  accentColor: string
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -13,7 +17,11 @@ const DEFAULT_SETTINGS: Settings = {
   shortBreakTime: 5,
   longBreakTime: 15,
   longBreakInterval: 4,
-  theme: 'dark'
+  theme: 'dark',
+  soundEnabled: true,
+  volume: 70,
+  notificationsEnabled: true,
+  accentColor: '#3b82f6'
 }
 
 export const useSettingsStore = defineStore('settings', {
@@ -28,7 +36,11 @@ export const useSettingsStore = defineStore('settings', {
     getShortBreakTime: (state) => state.shortBreakTime,
     getLongBreakTime: (state) => state.longBreakTime,
     getLongBreakInterval: (state) => state.longBreakInterval,
-    getTheme: (state) => state.theme
+    getTheme: (state) => state.theme,
+    getSoundEnabled: (state) => state.soundEnabled,
+    getVolume: (state) => state.volume,
+    getNotificationsEnabled: (state) => state.notificationsEnabled,
+    getAccentColor: (state) => state.accentColor
   },
 
   actions: {
@@ -51,8 +63,33 @@ export const useSettingsStore = defineStore('settings', {
           this.theme = savedTheme as 'light' | 'dark'
         }
 
+        // 加载声音设置
+        const savedSoundEnabled = localStorage.getItem('deepfocus-sound-enabled')
+        if (savedSoundEnabled !== null) {
+          this.soundEnabled = savedSoundEnabled === 'true'
+        }
+
+        const savedVolume = localStorage.getItem('deepfocus-volume')
+        if (savedVolume) {
+          this.volume = parseInt(savedVolume)
+        }
+
+        // 加载通知设置
+        const savedNotificationsEnabled = localStorage.getItem('deepfocus-notifications-enabled')
+        if (savedNotificationsEnabled !== null) {
+          this.notificationsEnabled = savedNotificationsEnabled === 'true'
+        }
+
+        // 加载强调色设置
+        const savedAccentColor = localStorage.getItem('deepfocus-accent-color')
+        if (savedAccentColor) {
+          this.accentColor = savedAccentColor
+        }
+
         // 应用主题
         this.applyTheme()
+        // 应用强调色
+        this.applyAccentColor()
       } catch (error) {
         console.error('加载设置失败:', error)
       }
@@ -68,8 +105,32 @@ export const useSettingsStore = defineStore('settings', {
 
         // 保存主题设置
         localStorage.setItem('deepfocus-theme', this.theme)
+
+        // 保存声音设置
+        localStorage.setItem('deepfocus-sound-enabled', String(this.soundEnabled))
+        localStorage.setItem('deepfocus-volume', String(this.volume))
+
+        // 保存通知设置
+        localStorage.setItem('deepfocus-notifications-enabled', String(this.notificationsEnabled))
+
+        // 保存强调色设置
+        localStorage.setItem('deepfocus-accent-color', this.accentColor)
       } catch (error) {
         console.error('保存设置失败:', error)
+      }
+    },
+
+    resetSettings() {
+      try {
+        // 重置为默认设置
+        Object.assign(this, DEFAULT_SETTINGS)
+        // 应用设置
+        this.applyTheme()
+        this.applyAccentColor()
+        // 保存到localStorage
+        this.saveSettings()
+      } catch (error) {
+        console.error('重置设置失败:', error)
       }
     },
 
@@ -97,6 +158,31 @@ export const useSettingsStore = defineStore('settings', {
       this.theme = theme
       this.applyTheme()
       this.saveSettings()
+    },
+
+    setSoundEnabled(enabled: boolean) {
+      this.soundEnabled = enabled
+      this.saveSettings()
+    },
+
+    setVolume(volume: number) {
+      this.volume = volume
+      this.saveSettings()
+    },
+
+    setNotificationsEnabled(enabled: boolean) {
+      this.notificationsEnabled = enabled
+      this.saveSettings()
+    },
+
+    setAccentColor(color: string) {
+      this.accentColor = color
+      this.applyAccentColor()
+      this.saveSettings()
+    },
+
+    applyAccentColor() {
+      document.documentElement.style.setProperty('--primary-color', this.accentColor)
     },
 
     applyTheme() {
