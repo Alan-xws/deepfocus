@@ -373,6 +373,16 @@ watch(
   background: var(--bg-primary); /* 使用主题变量确保正确显示白色背景 */
 }
 
+:global(.light-theme) .bg-decoration {
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%);
+}
+
+:global(.light-theme) .long-break .bg-decoration-1,
+:global(.light-theme) .long-break .bg-decoration-2,
+:global(.light-theme) .long-break .bg-decoration-3 {
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+}
+
 :global(.light-theme) .time-display {
   color: var(--text-primary);
 }
@@ -413,6 +423,20 @@ watch(
 :global(.light-theme) .reset-btn:hover,
 :global(.light-theme) .fullscreen-btn:hover {
   background: rgba(0, 0, 0, 0.1);
+}
+
+:global(.light-theme) .reset-btn::before,
+:global(.light-theme) .fullscreen-btn::before {
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.1), transparent);
+}
+
+:global(.light-theme) .reset-btn:hover,
+:global(.light-theme) .fullscreen-btn:hover,
+:global(.light-theme) .reset-btn.active,
+:global(.light-theme) .fullscreen-btn.active {
+  background: rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
 }
 
 /* ==================== 你原来的所有样式（完全保留） ==================== */

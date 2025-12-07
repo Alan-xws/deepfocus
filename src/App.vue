@@ -73,24 +73,24 @@ onUnmounted(() => {
 
 /* 浅色主题 */
 .light-theme {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
+  --bg-primary: #fafbfc;
+  --bg-secondary: #f3f4f6;
   --bg-card: rgba(255, 255, 255, 0.95);
-  --bg-card-light: rgba(0, 0, 0, 0.05);
+  --bg-card-light: rgba(59, 130, 246, 0.05);
 
-  --text-primary: #0f172a;
-  --text-secondary: rgba(0, 0, 0, 0.7);
-  --text-disabled: rgba(0, 0, 0, 0.5);
+  --text-primary: #111827;
+  --text-secondary: rgba(17, 24, 39, 0.65);
+  --text-disabled: rgba(17, 24, 39, 0.4);
 
-  --border-color: rgba(0, 0, 0, 0.1);
+  --border-color: rgba(17, 24, 39, 0.1);
 
-  --accent-primary: #3b82f6;
-  --accent-secondary: #8b5cf6;
-  --accent-hover: rgba(59, 130, 246, 0.1);
+  --accent-primary: #2563eb;
+  --accent-secondary: #7c3aed;
+  --accent-hover: rgba(37, 99, 235, 0.08);
 
-  --error-light: #fca5a5;
+  --error-light: #fee2e2;
   --error-main: #dc2626;
-  --error-bg: rgba(239, 68, 68, 0.05);
+  --error-bg: rgba(220, 38, 38, 0.05);
 
   color-scheme: light;
 }

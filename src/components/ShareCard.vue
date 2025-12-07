@@ -121,6 +121,11 @@ const formatDate = (dateString: string) => {
   border: 2px solid rgba(255, 255, 255, 0.1);
 }
 
+/* 浅色主题适配 */
+:global(.light-theme) .user-avatar {
+  border: 2px solid rgba(0, 0, 0, 0.1);
+}
+
 .user-details {
   display: flex;
   flex-direction: column;
@@ -162,6 +167,11 @@ const formatDate = (dateString: string) => {
   width: fit-content;
 }
 
+/* 浅色主题适配 */
+:global(.light-theme) .focus-duration {
+  background: rgba(16, 185, 129, 0.08);
+}
+
 /* 帖子图片样式 */
 .post-image-container {
   margin: 12px 0;
@@ -198,6 +208,11 @@ const formatDate = (dateString: string) => {
   gap: 24px;
   padding-top: 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 浅色主题适配 */
+:global(.light-theme) .card-actions {
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .action-btn {

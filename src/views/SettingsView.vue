@@ -652,8 +652,8 @@ const applyPreset = (preset: 'default' | 'short' | 'long') => {
 
 /* 设置卡片 - 与RecordsView的卡片风格一致 */
 .settings-card {
-  background: rgba(30, 41, 59, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 16px;
   padding: 24px;
   margin-bottom: 24px;

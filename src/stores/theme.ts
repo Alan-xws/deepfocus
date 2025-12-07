@@ -100,26 +100,26 @@ export const themeConfig = {
   // 浅色主题颜色
   light: {
     background: {
-      primary: '#ffffff',
-      secondary: '#f8fafc',
+      primary: '#fafbfc',
+      secondary: '#f3f4f6',
       card: 'rgba(255, 255, 255, 0.95)',
-      cardLight: 'rgba(0, 0, 0, 0.05)'
+      cardLight: 'rgba(59, 130, 246, 0.05)'
     },
     text: {
-      primary: '#0f172a',
-      secondary: 'rgba(0, 0, 0, 0.7)',
-      disabled: 'rgba(0, 0, 0, 0.5)'
+      primary: '#111827',
+      secondary: 'rgba(17, 24, 39, 0.65)',
+      disabled: 'rgba(17, 24, 39, 0.4)'
     },
-    border: 'rgba(0, 0, 0, 0.1)',
+    border: 'rgba(17, 24, 39, 0.1)',
     accent: {
-      primary: '#3b82f6',
-      secondary: '#8b5cf6',
-      hover: 'rgba(59, 130, 246, 0.1)'
+      primary: '#2563eb',
+      secondary: '#7c3aed',
+      hover: 'rgba(37, 99, 235, 0.08)'
     },
     error: {
-      light: '#fca5a5',
+      light: '#fee2e2',
       main: '#dc2626',
-      background: 'rgba(239, 68, 68, 0.05)'
+      background: 'rgba(220, 38, 38, 0.05)'
     }
   }
 }
