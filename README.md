@@ -1,8 +1,10 @@
-# DeepFocus项目版本记录
+# DeepFocus - 深度专注番茄钟应用
 
 ## 项目概述
 
-DeepFocus是一个专注番茄钟应用，帮助用户提高工作效率和专注力。项目使用Vue 3 + TypeScript + Pinia技术栈开发，具有番茄钟计时、任务管理、统计记录、成就系统和设置管理等功能。
+DeepFocus是一个功能全面的专注番茄钟应用，帮助用户提高工作效率和专注力。项目使用Vue 3 + TypeScript + Pinia技术栈开发，具有番茄钟计时、任务管理、统计记录、成就系统、分享广场和个性化设置等功能。
+
+应用采用现代化的深色主题设计，支持自定义主题和强调色，提供良好的用户体验和视觉效果。
 
 ## 版本记录
 
@@ -91,27 +93,79 @@ DeepFocus是一个专注番茄钟应用，帮助用户提高工作效率和专�
 - 响应式设计优化
 - 交互反馈与动画效果
 
+### v0.4.0 - 分享广场功能版本
+
+#### 核心功能实现
+
+- **分享广场系统**
+  - 创建了分享广场页面(`src/views/SquareView.vue`)
+  - 实现了分享卡片组件(`src/components/ShareCard.vue`)
+  - 支持用户分享专注成就和经验
+  - 帖子显示专注时长、内容和图片
+
+- **社交互动功能**
+  - 帖子点赞功能
+  - 评论系统实现
+  - 回复功能支持
+  - 实时更新点赞和评论数
+
+- **评论系统**
+  - 创建了评论卡片组件(`src/components/CommentCard.vue`)
+  - 支持嵌套回复显示
+  - 评论点赞功能
+  - 回复输入框动态展开/收起
+
+#### 技术实现
+
+- 使用Pinia管理分享广场状态(`src/stores/square.ts`)
+- 实现了模拟数据和本地存储
+- 响应式设计适配不同设备
+- 深色/浅色主题适配
+- 平滑的动画和过渡效果
+
+#### UI/UX优化
+
+- 现代化卡片设计
+- 动态交互效果
+- 评论区嵌套显示
+- 回复输入框动画
+- 加载状态和空状态处理
+
 ## 项目结构
 
 ```
 src/
 ├── components/         # Vue组件
+│   ├── CommentCard.vue     # 评论卡片组件
 │   ├── DeepFocusTimer.vue  # 番茄钟组件
 │   ├── NavBar.vue          # 导航栏组件
-│   └── ...
+│   ├── PageHeader.vue      # 页面头部组件
+│   ├── ShareCard.vue       # 分享卡片组件
+│   └── ToggleSwitch.vue    # 开关组件
+├── router/            # 路由配置
+│   └── index.ts
 ├── stores/            # Pinia状态管理
-│   ├── records.ts          # 记录存储
 │   ├── achievements.ts     # 成就存储
+│   ├── records.ts          # 记录存储
 │   ├── settings.ts         # 设置存储
-│   └── ...
-├── views/             # 页面视图
-│   ├── TimerView.vue       # 番茄钟页面
-│   ├── RecordsView.vue     # 统计页面
-│   ├── AchievementsView.vue # 成就页面
-│   ├── SettingsView.vue    # 设置页面
-│   └── ...
-└── router/            # 路由配置
-    └── index.ts
+│   ├── square.ts           # 分享广场存储
+│   ├── tasks.ts            # 任务存储
+│   └── theme.ts            # 主题存储
+├── utils/             # 工具函数
+│   └── api.ts              # API接口封装
+└── views/             # 页面视图
+    ├── AchievementsView.vue # 成就页面
+    ├── LoginView.vue       # 登录页面
+    ├── ProfileView.vue     # 个人资料页面
+    │   ├── ProfileAboutView.vue       # 个人简介
+    │   ├── ProfileInfoView.vue         # 基本信息
+    │   ├── ProfileNotificationsView.vue # 通知设置
+    │   └── ProfilePrivacyView.vue      # 隐私设置
+    ├── RecordsView.vue     # 统计记录页面
+    ├── SettingsView.vue    # 设置页面
+    ├── SquareView.vue      # 分享广场页面
+    ├── TimerView.vue       # 番茄钟页面
+    └── WelcomeView.vue     # 欢迎页面
 ```
 
 ## 技术栈
@@ -188,3 +242,7 @@ npm run lint
 - [ ] 专注数据导出功能
 - [ ] 多设备同步
 - [ ] 团队协作功能
+- [ ] 分享帖子的图片上传功能
+- [ ] 更多社交互动功能
+- [ ] 数据分析和可视化增强
+- [ ] 移动端适配优化

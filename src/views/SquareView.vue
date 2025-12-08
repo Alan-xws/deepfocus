@@ -1,7 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { ref, onMounted, watch } from 'vue'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { useRouter } from 'vue-router'
 import ShareCard from '../components/ShareCard.vue'
 import { useSquareStore } from '@/stores/square'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { SharePost, Comment } from '@/stores/square'
 
 const squareStore = useSquareStore()
 const showShareModal = ref(false)
@@ -18,8 +23,29 @@ onMounted(() => {
 })
 
 // 切换点赞状态
-const toggleLike = (postId: string) => {
+const handleToggleLike = (postId: string) => {
   squareStore.toggleLike(postId)
+}
+
+// 切换评论显示
+const handleToggleComments = (postId: string) => {
+  // 获取评论数据
+  squareStore.getCommentsForPost(postId)
+}
+
+// 添加评论
+const handleAddComment = (postId: string, content: string) => {
+  squareStore.addComment(postId, content)
+}
+
+// 切换评论点赞
+const handleToggleCommentLike = (commentId: string, postId: string) => {
+  squareStore.toggleCommentLike(postId, commentId)
+}
+
+// 添加回复
+const handleAddReply = (postId: string, commentId: string, content: string) => {
+  squareStore.addReply(postId, commentId, content)
 }
 
 // 打开分享模态框
@@ -152,17 +178,22 @@ const submitShare = async () => {
       </div>
 
       <!-- 空状态 -->
-      <div v-else-if="squareStore.sortedPosts.length === 0" class="empty-state">
+      <div v-else-if="squareStore.posts.length === 0" class="empty-state">
         <p>广场还没有分享内容，快来发布第一条吧！</p>
       </div>
 
       <!-- 帖子列表 -->
       <div v-else class="posts-list">
         <ShareCard
-          v-for="post in squareStore.sortedPosts"
+          v-for="post in squareStore.posts"
           :key="post.id"
           :post="post"
-          @toggle-like="toggleLike"
+          :comments="post.commentList || []"
+          @toggle-like="handleToggleLike"
+          @toggle-comments="handleToggleComments"
+          @add-comment="handleAddComment"
+          @toggle-comment-like="(commentId) => handleToggleCommentLike(commentId, post.id)"
+          @add-reply="handleAddReply"
         />
       </div>
     </div>
@@ -757,5 +788,39 @@ const submitShare = async () => {
   .modal-footer {
     padding: 16px;
   }
+}
+
+/* 浅色主题适配 */
+:global(.light-theme) .share-textarea {
+  background: var(--bg-tertiary);
+  border-color: transparent;
+}
+
+:global(.light-theme) .share-textarea:hover {
+  border-color: var(--border-color);
+  background: var(--bg-hover);
+}
+
+:global(.light-theme) .share-textarea:focus {
+  border-color: var(--accent-primary);
+  background: var(--bg-tertiary);
+}
+
+:global(.light-theme) .image-upload-container {
+  border-color: var(--border-color);
+  background: var(--bg-tertiary);
+}
+
+:global(.light-theme) .image-upload-container:hover:not(.disabled) {
+  border-color: var(--accent-primary);
+  background: rgba(14, 165, 233, 0.08);
+}
+
+:global(.light-theme) .modal-header {
+  border-bottom-color: var(--border-color);
+}
+
+:global(.light-theme) .modal-footer {
+  border-top-color: var(--border-color);
 }
 </style>

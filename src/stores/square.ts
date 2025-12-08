@@ -2,6 +2,18 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 
 // 定义分享帖子接口
+export interface Comment {
+  id: string
+  userId: string
+  username: string
+  avatar: string
+  content: string
+  date: string
+  likes: number
+  isLiked: boolean
+  replies?: Comment[]
+}
+
 export interface SharePost {
   id: string
   userId: string
@@ -14,6 +26,7 @@ export interface SharePost {
   comments: number
   isLiked: boolean
   image?: string
+  commentList?: Comment[]
 }
 
 // 定义发布分享的请求接口
@@ -28,6 +41,7 @@ export const useSquareStore = defineStore('square', () => {
   const posts = ref<SharePost[]>([])
   const isLoading = ref(false)
   const isPosting = ref(false)
+  const isCommenting = ref(false)
   const error = ref<string | null>(null)
 
   // 计算属性
@@ -44,8 +58,8 @@ export const useSquareStore = defineStore('square', () => {
     error.value = null
     try {
       // 模拟API请求
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
       // 模拟数据
       const mockPosts: SharePost[] = [
         {
@@ -59,7 +73,7 @@ export const useSquareStore = defineStore('square', () => {
           likes: 42,
           comments: 5,
           isLiked: false,
-          image: 'https://picsum.photos/id/100/600/400'
+          image: 'https://picsum.photos/id/100/600/400',
         },
         {
           id: '2',
@@ -71,7 +85,7 @@ export const useSquareStore = defineStore('square', () => {
           date: '2025-04-29',
           likes: 28,
           comments: 3,
-          isLiked: true
+          isLiked: true,
         },
         {
           id: '3',
@@ -84,7 +98,7 @@ export const useSquareStore = defineStore('square', () => {
           likes: 65,
           comments: 8,
           isLiked: false,
-          image: 'https://picsum.photos/id/200/600/400'
+          image: 'https://picsum.photos/id/200/600/400',
         },
         {
           id: '4',
@@ -96,7 +110,7 @@ export const useSquareStore = defineStore('square', () => {
           date: '2025-04-28',
           likes: 35,
           comments: 4,
-          isLiked: false
+          isLiked: false,
         },
         {
           id: '5',
@@ -109,10 +123,10 @@ export const useSquareStore = defineStore('square', () => {
           likes: 52,
           comments: 6,
           isLiked: true,
-          image: 'https://picsum.photos/id/300/600/400'
-        }
+          image: 'https://picsum.photos/id/300/600/400',
+        },
       ]
-      
+
       posts.value = mockPosts
     } catch (err) {
       error.value = '获取帖子失败，请稍后重试'
@@ -128,8 +142,8 @@ export const useSquareStore = defineStore('square', () => {
     error.value = null
     try {
       // 模拟API请求
-      await new Promise(resolve => setTimeout(resolve, 800))
-      
+      await new Promise((resolve) => setTimeout(resolve, 800))
+
       // 模拟创建的帖子数据
       const newPost: SharePost = {
         id: Date.now().toString(),
@@ -142,12 +156,12 @@ export const useSquareStore = defineStore('square', () => {
         likes: 0,
         comments: 0,
         isLiked: false,
-        image: data.image
+        image: data.image,
       }
-      
+
       // 添加到帖子列表开头
       posts.value.unshift(newPost)
-      
+
       return newPost
     } catch (err) {
       error.value = '发布帖子失败，请稍后重试'
@@ -162,37 +176,194 @@ export const useSquareStore = defineStore('square', () => {
   const toggleLike = async (postId: string) => {
     try {
       // 先在本地更新状态（乐观更新）
-      const post = posts.value.find(p => p.id === postId)
+      const post = posts.value.find((p) => p.id === postId)
       if (post) {
         post.isLiked = !post.isLiked
         post.likes += post.isLiked ? 1 : -1
       }
-      
+
       // 模拟API请求
-      await new Promise(resolve => setTimeout(resolve, 300))
+      await new Promise((resolve) => setTimeout(resolve, 300))
     } catch (err) {
       // 如果API请求失败，回滚本地状态
-      const post = posts.value.find(p => p.id === postId)
+      const post = posts.value.find((p) => p.id === postId)
       if (post) {
         post.isLiked = !post.isLiked
         post.likes += post.isLiked ? 1 : -1
       }
-      
+
       error.value = '操作失败，请稍后重试'
       console.error('切换点赞状态失败:', err)
+    }
+  }
+
+  // 添加评论
+  const addComment = (postId: string, content: string) => {
+    // 模拟添加评论
+    const post = posts.value.find((p) => p.id === postId)
+    if (post) {
+      // 创建新评论
+      const newComment: Comment = {
+        id: Date.now().toString(),
+        userId: 'current-user',
+        username: '当前用户',
+        avatar: 'https://ui-avatars.com/api/?name=User&background=random',
+        content,
+        date: new Date().toISOString(),
+        likes: 0,
+        isLiked: false,
+      }
+
+      // 初始化评论列表
+      if (!post.commentList) {
+        post.commentList = []
+      }
+
+      // 添加到评论列表开头
+      post.commentList.unshift(newComment)
+      post.comments++
+    }
+  }
+
+  const toggleCommentLike = (postId: string, commentId: string) => {
+    // 模拟点赞评论
+    const post = posts.value.find((p) => p.id === postId)
+    if (post && post.commentList) {
+      const findCommentInTree = (comments: Comment[], id: string): Comment | undefined => {
+        for (const comment of comments) {
+          if (comment.id === id) {
+            return comment
+          }
+          if (comment.replies) {
+            const found = findCommentInTree(comment.replies, id)
+            if (found) {
+              return found
+            }
+          }
+        }
+        return undefined
+      }
+
+      const comment = findCommentInTree(post.commentList, commentId)
+      if (comment) {
+        if (comment.isLiked) {
+          comment.likes--
+        } else {
+          comment.likes++
+        }
+        comment.isLiked = !comment.isLiked
+      }
+    }
+  }
+
+  const getCommentsForPost = (postId: string) => {
+    // 模拟获取帖子评论
+    const post = posts.value.find((p) => p.id === postId)
+    if (post && !post.commentList) {
+      // 为没有评论的帖子添加模拟评论数据
+      const generateMockComments = (post: SharePost): Comment[] => {
+        const mockComments: Comment[] = [
+          {
+            id: 'comment-1',
+            userId: 'user-2',
+            username: '专注达人',
+            avatar: 'https://ui-avatars.com/api/?name=Focus&background=random',
+            content: '太棒了！我也要向你学习这种专注精神。',
+            date: new Date(Date.now() - 3600000).toISOString(), // 1小时前
+            likes: 5,
+            isLiked: false,
+          },
+          {
+            id: 'comment-2',
+            userId: 'user-3',
+            username: '番茄工作法爱好者',
+            avatar: 'https://ui-avatars.com/api/?name=Tomato&background=random',
+            content: '这个时长很厉害！能分享一下你的专注技巧吗？',
+            date: new Date(Date.now() - 7200000).toISOString(), // 2小时前
+            likes: 3,
+            isLiked: true,
+            replies: [
+              {
+                id: 'reply-1',
+                userId: post.userId,
+                username: post.username,
+                avatar: post.avatar,
+                content: '主要是使用番茄工作法，然后关闭所有干扰项。',
+                date: new Date(Date.now() - 6000000).toISOString(), // 1.5小时前
+                likes: 2,
+                isLiked: false,
+              },
+            ],
+          },
+        ]
+        return mockComments
+      }
+
+      post.commentList = generateMockComments(post)
+    }
+    return post?.commentList || []
+  }
+
+  const addReply = (postId: string, commentId: string, content: string) => {
+    // 模拟添加回复
+    const post = posts.value.find((p) => p.id === postId)
+    if (post && post.commentList) {
+      // 查找评论
+      const findCommentInTree = (comments: Comment[], id: string): Comment | undefined => {
+        for (const comment of comments) {
+          if (comment.id === id) {
+            return comment
+          }
+          if (comment.replies) {
+            const found = findCommentInTree(comment.replies, id)
+            if (found) {
+              return found
+            }
+          }
+        }
+        return undefined
+      }
+
+      const parentComment = findCommentInTree(post.commentList, commentId)
+      if (parentComment) {
+        // 创建新回复
+        const newReply: Comment = {
+          id: Date.now().toString(),
+          userId: 'current-user',
+          username: '当前用户',
+          avatar: 'https://ui-avatars.com/api/?name=User&background=random',
+          content,
+          date: new Date().toISOString(),
+          likes: 0,
+          isLiked: false,
+        }
+
+        // 初始化回复列表
+        if (!parentComment.replies) {
+          parentComment.replies = []
+        }
+
+        // 添加到回复列表开头
+        parentComment.replies.unshift(newReply)
+        post.comments++
+      }
     }
   }
 
   return {
     // 状态
     posts,
-    sortedPosts,
     isLoading,
     isPosting,
+    isCommenting,
     error,
     // 操作
     fetchPosts,
     createPost,
-    toggleLike
+    toggleLike,
+    addComment,
+    toggleCommentLike,
+    getCommentsForPost,
+    addReply,
   }
 })
